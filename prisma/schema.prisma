@@ -1,0 +1,250 @@
+// RegulaFlow AI Prisma Schema
+// Smart India Hackathon 2026 - Problem Statement: SIH26262
+// Self-contained SQLite database for rapid zero-friction prototype execution
+// Production PostgreSQL schema also provided in prisma/schema.postgresql.prisma
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id              String        @id @default(uuid())
+  email           String        @unique
+  passwordHash    String
+  fullName        String
+  role            String        // INSTITUTION_USER, REGIONAL_OFFICER, BUREAU_OFFICER, COMMITTEE_MEMBER, SYSTEM_ADMIN
+  phone           String?
+  region          String?       // NORTHERN, WESTERN, SOUTHERN, EASTERN, CENTRAL, SOUTH_WESTERN
+  institutionId   String?
+  institution     Institution?  @relation(fields: [institutionId], references: [id])
+  active          Boolean       @default(true)
+  createdAt       DateTime      @default(now())
+  updatedAt       DateTime      @updatedAt
+
+  assignedApplications Application[] @relation("AssignedOfficer")
+  auditEvents          AuditEvent[]
+  notifications        Notification[]
+  findingsResolved     ValidationFinding[] @relation("ResolvedFindings")
+}
+
+model Institution {
+  id              String        @id @default(uuid())
+  code            String        @unique // e.g. 1-109283921
+  name            String
+  type            String        // ENGINEERING_TECH, MANAGEMENT, PHARMACY, POLYTECHNIC, ARCHITECTURE_PLANNING
+  region          String        // NORTHERN, WESTERN, SOUTHERN, EASTERN, CENTRAL, SOUTH_WESTERN
+  state           String
+  city            String
+  address         String
+  pincode         String
+  contactEmail    String
+  contactPhone    String
+  establishedYear Int
+  createdAt       DateTime      @default(now())
+  updatedAt       DateTime      @updatedAt
+
+  users           User[]
+  applications    Application[]
+  complianceItems ComplianceObligation[]
+  notifications   Notification[]
+}
+
+model Application {
+  id                  String        @id @default(uuid())
+  applicationNumber   String        @unique // e.g. AICTE/2026-27/APP-00102
+  academicYear        String        @default("2026-2027")
+  category            String        // EXTENSION_OF_APPROVAL, NEW_INSTITUTION, INCREASE_IN_INTAKE, etc.
+  currentStage        String        @default("DRAFT") // DRAFT, SUBMITTED, UNDER_SCRUTINY, DEFICIENCY_RAISED, etc.
+  priority            String        @default("NORMAL") // NORMAL, HIGH, URGENT
+  institutionId       String
+  institution         Institution   @relation(fields: [institutionId], references: [id], onDelete: Cascade)
+  assignedOfficerId   String?
+  assignedOfficer     User?         @relation("AssignedOfficer", fields: [assignedOfficerId], references: [id])
+  submissionDate      DateTime?
+  deadlineDate        DateTime?
+  lastResubmissionDate DateTime?
+  programmesData      String?       // JSON: courses, intake capacities, shifts
+  infrastructureData  String?       // JSON: land area, builtup area, instructional, administrative
+  facultyData         String?       // JSON: principal, professors, cadre ratio, SFR
+  financialData       String?       // JSON: endowment fund, FDR, audit status
+  scrutinyRemarks     String?
+  createdAt           DateTime      @default(now())
+  updatedAt           DateTime      @updatedAt
+
+  documents           ApplicationDocument[]
+  findings            ValidationFinding[]
+  complianceItems     ComplianceObligation[]
+  evcActivities       EVCActivity[]
+  stageHistory        ApplicationStageHistory[]
+  notifications       Notification[]
+}
+
+model ApplicationDocument {
+  id                  String        @id @default(uuid())
+  applicationId       String
+  application         Application   @relation(fields: [applicationId], references: [id], onDelete: Cascade)
+  documentType        String        // LAND_TITLE_LEASE_DEED, OCCUPANCY_CERTIFICATE, FIRE_SAFETY_NOC, etc.
+  fileName            String
+  originalName        String
+  mimeType            String
+  fileSize            Int
+  filePath            String
+  checksumSha256      String
+  version             Int           @default(1)
+  uploadDate          DateTime      @default(now())
+  expiryDate          DateTime?
+  status              String        @default("PENDING_OCR") // PENDING_OCR, OCR_COMPLETED, VERIFIED, FLAGGED, REJECTED
+  verifiedBy          String?
+  verifiedAt          DateTime?
+
+  extractions         DocumentExtraction[]
+  findings            ValidationFinding[]
+  complianceItems     ComplianceObligation[]
+}
+
+model DocumentExtraction {
+  id                  String              @id @default(uuid())
+  documentId          String
+  document            ApplicationDocument @relation(fields: [documentId], references: [id], onDelete: Cascade)
+  rawText             String
+  extractedFieldsJson String?             // JSON: lessor, lessee, expiryDate, carpetArea, surveyNo, nocAuthority
+  confidenceScore     Float               @default(0.0)
+  ocrEngine           String              @default("TESSERACT_OCR") // PDF_TEXT_STREAM, TESSERACT_OCR, FALLBACK_MOCK
+  processedAt         DateTime            @default(now())
+}
+
+model ValidationFinding {
+  id                  String              @id @default(uuid())
+  applicationId       String
+  application         Application         @relation(fields: [applicationId], references: [id], onDelete: Cascade)
+  documentId          String?
+  document            ApplicationDocument? @relation(fields: [documentId], references: [id], onDelete: SetNull)
+  ruleCode            String              // VAL_LEASE_EXPIRY, VAL_MISSING_FIRE_NOC, etc.
+  title               String
+  description         String
+  severity            String              // CRITICAL, HIGH, MEDIUM, LOW
+  status              String              @default("OPEN") // OPEN, UNDER_REVIEW, CONFIRMED, DISMISSED, RESOLVED
+  evidenceExcerpt     String?
+  detectedAt          DateTime            @default(now())
+  resolvedByUserId    String?
+  resolvedByUser      User?               @relation("ResolvedFindings", fields: [resolvedByUserId], references: [id])
+  resolutionNotes     String?
+  resolutionDate      DateTime?
+}
+
+model ComplianceObligation {
+  id                  String              @id @default(uuid())
+  institutionId       String
+  institution         Institution         @relation(fields: [institutionId], references: [id], onDelete: Cascade)
+  applicationId       String?
+  application         Application?        @relation(fields: [applicationId], references: [id], onDelete: SetNull)
+  obligationType      String              // LEASE_VALIDITY, AFFIDAVIT_UNDERTAKING, FIRE_SAFETY_RENEWAL, etc.
+  title               String
+  description         String
+  dueDate             DateTime
+  warningDays         Int                 @default(30)
+  status              String              @default("ACTIVE") // ACTIVE, DUE_SOON, OVERDUE, COMPLETED
+  evidenceDocumentId  String?
+  evidenceDocument    ApplicationDocument? @relation(fields: [evidenceDocumentId], references: [id], onDelete: SetNull)
+  completedAt         DateTime?
+  completionNotes     String?
+  createdAt           DateTime            @default(now())
+  updatedAt           DateTime            @updatedAt
+}
+
+model EVCActivity {
+  id                  String              @id @default(uuid())
+  applicationId       String
+  application         Application         @relation(fields: [applicationId], references: [id], onDelete: Cascade)
+  committeeType       String              @default("EXPERT_VISITING_COMMITTEE") // EXPERT_VISITING_COMMITTEE, SCRUTINY_COMMITTEE
+  scheduledDate       DateTime
+  venueOrMode         String              @default("PHYSICAL_INSPECTION") // PHYSICAL_INSPECTION, VIRTUAL_MEETING, HYBRID
+  status              String              @default("SCHEDULED") // PROPOSED, SCHEDULED, IN_PROGRESS, COMPLETED, RESCHEDULED, CANCELLED
+  chairmanName        String
+  membersJson         String              // JSON array of expert members
+  checklistJson       String?             // JSON array of verification checklist items
+  observations        String?
+  recommendation      String?             // RECOMMENDED_APPROVAL, DEFICIENCY_NOTED, RECOMMENDED_REJECTION
+  reportDocumentPath  String?
+  completedAt         DateTime?
+  createdAt           DateTime            @default(now())
+  updatedAt           DateTime            @updatedAt
+}
+
+model ApplicationStageHistory {
+  id                  String              @id @default(uuid())
+  applicationId       String
+  application         Application         @relation(fields: [applicationId], references: [id], onDelete: Cascade)
+  fromStage           String
+  toStage             String
+  action              String
+  actorId             String?
+  actorName           String?
+  actorRole           String?
+  reason              String?
+  timestamp           DateTime            @default(now())
+}
+
+model Notification {
+  id                  String              @id @default(uuid())
+  userId              String?
+  user                User?               @relation(fields: [userId], references: [id], onDelete: Cascade)
+  institutionId       String?
+  institution         Institution?        @relation(fields: [institutionId], references: [id], onDelete: Cascade)
+  applicationId       String?
+  application         Application?        @relation(fields: [applicationId], references: [id], onDelete: Cascade)
+  category            String              // APPLICATION_STATUS, DEFICIENCY_ALERT, COMPLIANCE_REMINDER, ESCALATION
+  severity            String              @default("INFO") // INFO, WARNING, CRITICAL
+  title               String
+  message             String
+  link                String?
+  read                Boolean             @default(false)
+  createdAt           DateTime            @default(now())
+}
+
+model EscalationEvent {
+  id                  String              @id @default(uuid())
+  applicationId       String?
+  complianceId        String?
+  triggerRule         String
+  severity            String              @default("HIGH")
+  escalatedToRole     String              // REGIONAL_OFFICER, BUREAU_OFFICER, SYSTEM_ADMIN
+  message             String
+  resolved            Boolean             @default(false)
+  createdAt           DateTime            @default(now())
+  resolvedAt          DateTime?
+}
+
+model RegulatoryReference {
+  id                  String              @id @default(uuid())
+  code                String              @unique // e.g. APH_2026_LAND_NORMS
+  title               String
+  chapter             String
+  category            String              // NORMS, PROCEDURES, AFFIDAVITS, PENALTIES
+  summary             String
+  contentChunksJson   String              // JSON array of { section, text, pageRef }
+  effectiveYear       String              @default("2026-2027")
+  createdAt           DateTime            @default(now())
+}
+
+model AuditEvent {
+  id                  String              @id @default(uuid())
+  actorId             String?
+  user                User?               @relation(fields: [actorId], references: [id], onDelete: SetNull)
+  actorEmail          String
+  actorRole           String
+  action              String              // LOGIN, STAGE_TRANSITION, DEFICIENCY_FLAGGED, etc.
+  entityType          String              // Application, Document, Compliance, EVC, etc.
+  entityId            String?
+  beforeStateJson     String?
+  afterStateJson      String?
+  reason              String?
+  ipAddress           String?
+  userAgent           String?
+  timestamp           DateTime            @default(now())
+}

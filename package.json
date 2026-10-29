@@ -1,0 +1,31 @@
+{
+  "name": "regulaflow-ai",
+  "version": "1.0.0",
+  "private": true,
+  "description": "RegulaFlow AI - Integrated AICTE Approval Workflow Automation, Compliance Monitoring and Alert Management System (SIH26262)",
+  "workspaces": [
+    "packages/*",
+    "apps/*"
+  ],
+  "scripts": {
+    "dev": "npm run dev --workspaces --if-present",
+    "dev:api": "npm run dev --workspace=@regulaflow/api",
+    "dev:web": "npm run dev --workspace=@regulaflow/web",
+    "build": "npm run build --workspaces --if-present",
+    "test": "npm run test --workspaces --if-present",
+    "prisma:generate": "npx prisma generate --schema=./prisma/schema.prisma",
+    "prisma:push": "npx prisma db push --schema=./prisma/schema.prisma",
+    "prisma:seed": "npx ts-node ./prisma/seed.ts",
+    "setup:db": "npm run prisma:generate && npm run prisma:push && npm run prisma:seed"
+  },
+  "keywords": [
+    "sih2026",
+    "aicte",
+    "workflow-automation",
+    "compliance-monitoring",
+    "ocr",
+    "document-intelligence"
+  ],
+  "author": "RegulaFlow AI Engineering Team",
+  "license": "ISC"
+}

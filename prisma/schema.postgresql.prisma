@@ -1,0 +1,248 @@
+// RegulaFlow AI Prisma Schema - PostgreSQL Production Target
+// Smart India Hackathon 2026 - Problem Statement: SIH26262
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id              String        @id @default(uuid())
+  email           String        @unique
+  passwordHash    String
+  fullName        String
+  role            String
+  phone           String?
+  region          String?
+  institutionId   String?
+  institution     Institution?  @relation(fields: [institutionId], references: [id])
+  active          Boolean       @default(true)
+  createdAt       DateTime      @default(now())
+  updatedAt       DateTime      @updatedAt
+
+  assignedApplications Application[] @relation("AssignedOfficer")
+  auditEvents          AuditEvent[]
+  notifications        Notification[]
+  findingsResolved     ValidationFinding[] @relation("ResolvedFindings")
+}
+
+model Institution {
+  id              String        @id @default(uuid())
+  code            String        @unique
+  name            String
+  type            String
+  region          String
+  state           String
+  city            String
+  address         String
+  pincode         String
+  contactEmail    String
+  contactPhone    String
+  establishedYear Int
+  createdAt       DateTime      @default(now())
+  updatedAt       DateTime      @updatedAt
+
+  users           User[]
+  applications    Application[]
+  complianceItems ComplianceObligation[]
+  notifications   Notification[]
+}
+
+model Application {
+  id                  String        @id @default(uuid())
+  applicationNumber   String        @unique
+  academicYear        String        @default("2026-2027")
+  category            String
+  currentStage        String        @default("DRAFT")
+  priority            String        @default("NORMAL")
+  institutionId       String
+  institution         Institution   @relation(fields: [institutionId], references: [id], onDelete: Cascade)
+  assignedOfficerId   String?
+  assignedOfficer     User?         @relation("AssignedOfficer", fields: [assignedOfficerId], references: [id])
+  submissionDate      DateTime?
+  deadlineDate        DateTime?
+  lastResubmissionDate DateTime?
+  programmesData      String?
+  infrastructureData  String?
+  facultyData         String?
+  financialData       String?
+  scrutinyRemarks     String?
+  createdAt           DateTime      @default(now())
+  updatedAt           DateTime      @updatedAt
+
+  documents           ApplicationDocument[]
+  findings            ValidationFinding[]
+  complianceItems     ComplianceObligation[]
+  evcActivities       EVCActivity[]
+  stageHistory        ApplicationStageHistory[]
+  notifications       Notification[]
+}
+
+model ApplicationDocument {
+  id                  String        @id @default(uuid())
+  applicationId       String
+  application         Application   @relation(fields: [applicationId], references: [id], onDelete: Cascade)
+  documentType        String
+  fileName            String
+  originalName        String
+  mimeType            String
+  fileSize            Int
+  filePath            String
+  checksumSha256      String
+  version             Int           @default(1)
+  uploadDate          DateTime      @default(now())
+  expiryDate          DateTime?
+  status              String        @default("PENDING_OCR")
+  verifiedBy          String?
+  verifiedAt          DateTime?
+
+  extractions         DocumentExtraction[]
+  findings            ValidationFinding[]
+  complianceItems     ComplianceObligation[]
+}
+
+model DocumentExtraction {
+  id                  String              @id @default(uuid())
+  documentId          String
+  document            ApplicationDocument @relation(fields: [documentId], references: [id], onDelete: Cascade)
+  rawText             String
+  extractedFieldsJson String?
+  confidenceScore     Float               @default(0.0)
+  ocrEngine           String              @default("TESSERACT_OCR")
+  processedAt         DateTime            @default(now())
+}
+
+model ValidationFinding {
+  id                  String              @id @default(uuid())
+  applicationId       String
+  application         Application         @relation(fields: [applicationId], references: [id], onDelete: Cascade)
+  documentId          String?
+  document            ApplicationDocument? @relation(fields: [documentId], references: [id], onDelete: SetNull)
+  ruleCode            String
+  title               String
+  description         String
+  severity            String
+  status              String              @default("OPEN")
+  evidenceExcerpt     String?
+  detectedAt          DateTime            @default(now())
+  resolvedByUserId    String?
+  resolvedByUser      User?               @relation("ResolvedFindings", fields: [resolvedByUserId], references: [id])
+  resolutionNotes     String?
+  resolutionDate      DateTime?
+}
+
+model ComplianceObligation {
+  id                  String              @id @default(uuid())
+  institutionId       String
+  institution         Institution         @relation(fields: [institutionId], references: [id], onDelete: Cascade)
+  applicationId       String?
+  application         Application?        @relation(fields: [applicationId], references: [id], onDelete: SetNull)
+  obligationType      String
+  title               String
+  description         String
+  dueDate             DateTime
+  warningDays         Int                 @default(30)
+  status              String              @default("ACTIVE")
+  evidenceDocumentId  String?
+  evidenceDocument    ApplicationDocument? @relation(fields: [evidenceDocumentId], references: [id], onDelete: SetNull)
+  completedAt         DateTime?
+  completionNotes     String?
+  createdAt           DateTime            @default(now())
+  updatedAt           DateTime            @updatedAt
+}
+
+model EVCActivity {
+  id                  String              @id @default(uuid())
+  applicationId       String
+  application         Application         @relation(fields: [applicationId], references: [id], onDelete: Cascade)
+  committeeType       String              @default("EXPERT_VISITING_COMMITTEE")
+  scheduledDate       DateTime
+  venueOrMode         String              @default("PHYSICAL_INSPECTION")
+  status              String              @default("SCHEDULED")
+  chairmanName        String
+  membersJson         String
+  checklistJson       String?
+  observations        String?
+  recommendation      String?
+  reportDocumentPath  String?
+  completedAt         DateTime?
+  createdAt           DateTime            @default(now())
+  updatedAt           DateTime            @updatedAt
+}
+
+model ApplicationStageHistory {
+  id                  String              @id @default(uuid())
+  applicationId       String
+  application         Application         @relation(fields: [applicationId], references: [id], onDelete: Cascade)
+  fromStage           String
+  toStage             String
+  action              String
+  actorId             String?
+  actorName           String?
+  actorRole           String?
+  reason              String?
+  timestamp           DateTime            @default(now())
+}
+
+model Notification {
+  id                  String              @id @default(uuid())
+  userId              String?
+  user                User?               @relation(fields: [userId], references: [id], onDelete: Cascade)
+  institutionId       String?
+  institution         Institution?        @relation(fields: [institutionId], references: [id], onDelete: Cascade)
+  applicationId       String?
+  application         Application?        @relation(fields: [applicationId], references: [id], onDelete: Cascade)
+  category            String
+  severity            String              @default("INFO")
+  title               String
+  message             String
+  link                String?
+  read                Boolean             @default(false)
+  createdAt           DateTime            @default(now())
+}
+
+model EscalationEvent {
+  id                  String              @id @default(uuid())
+  applicationId       String?
+  complianceId        String?
+  triggerRule         String
+  severity            String              @default("HIGH")
+  escalatedToRole     String
+  message             String
+  resolved            Boolean             @default(false)
+  createdAt           DateTime            @default(now())
+  resolvedAt          DateTime?
+}
+
+model RegulatoryReference {
+  id                  String              @id @default(uuid())
+  code                String              @unique
+  title               String
+  chapter             String
+  category            String
+  summary             String
+  contentChunksJson   String
+  effectiveYear       String              @default("2026-2027")
+  createdAt           DateTime            @default(now())
+}
+
+model AuditEvent {
+  id                  String              @id @default(uuid())
+  actorId             String?
+  user                User?               @relation(fields: [actorId], references: [id], onDelete: SetNull)
+  actorEmail          String
+  actorRole           String
+  action              String
+  entityType          String
+  entityId            String?
+  beforeStateJson     String?
+  afterStateJson      String?
+  reason              String?
+  ipAddress           String?
+  userAgent           String?
+  timestamp           DateTime            @default(now())
+}
