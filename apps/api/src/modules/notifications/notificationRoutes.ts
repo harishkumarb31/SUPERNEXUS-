@@ -10,3 +10,4 @@ notificationRouter.get('/', NotificationController.list);
 notificationRouter.put('/:id/read', NotificationController.markAsRead);
 notificationRouter.put('/mark-all-read', NotificationController.markAllAsRead);
 notificationRouter.get('/escalations', NotificationController.listEscalations);
+

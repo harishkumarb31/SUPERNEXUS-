@@ -149,3 +149,4 @@ stateDiagram-v2
 - **Private Storage**: Documents are saved outside the public root. Direct access returns 403 Forbidden; downloads are routed via authenticated streaming endpoints verifying ownership.
 - **Deterministic Validation**: Pure deterministic rule checker that runs even if AI service is offline.
 - **AI / RAG**: Groq / OpenAI adapter with clear grounding on AICTE APH chunks and reliable offline fallback. No hallucinated citations.
+

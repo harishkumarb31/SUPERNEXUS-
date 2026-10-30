@@ -63,3 +63,4 @@ For local demonstration and SIH jury evaluation, five pre-configured role accoun
 1. Open the **Audit Trail** tab.
 2. Filter by action (e.g., `STAGE_TRANSITION` or `DEFICIENCY_FLAGGED`).
 3. Click **"Inspect State"** to examine the before-and-after JSON mutation diffs.
+

@@ -54,3 +54,4 @@ RegulaFlow AI enforces both role-based access control and jurisdictional attribu
 - All significant mutations (Application creation, submissions, stage transitions, document uploads, OCR execution, deficiency flags, compliance completions, EVC scheduling) are automatically logged to the `AuditEvent` journal.
 - Captures: Actor ID, Email, Role, Action, Entity Type, Entity ID, Before/After JSON states, Reason, IP address, and Timestamp.
 - Normal application users are prevented from editing or deleting audit events.
+

@@ -12,10 +12,14 @@ import {
   Edit2,
   Check,
   X,
+  Lock,
 } from 'lucide-react';
+import { useAuth } from '../context/AuthContext';
+import { UserRole } from '../types';
 import { applicationService, documentService } from '../services/api';
 
 export const DocumentIntelligencePage: React.FC = () => {
+  const { user } = useAuth();
   const [applications, setApplications] = useState<any[]>([]);
   const [selectedDoc, setSelectedDoc] = useState<any>(null);
   const [loading, setLoading] = useState(true);
@@ -24,6 +28,12 @@ export const DocumentIntelligencePage: React.FC = () => {
   // Field editing state
   const [isEditingFields, setIsEditingFields] = useState(false);
   const [editedFields, setEditedFields] = useState<any>({});
+  const [saveError, setSaveError] = useState<string | null>(null);
+  const [isSaving, setIsSaving] = useState(false);
+
+  const canEditFields = user?.role === UserRole.REGIONAL_OFFICER ||
+    user?.role === UserRole.BUREAU_OFFICER ||
+    user?.role === UserRole.SYSTEM_ADMIN;
 
   const fetchDocuments = async () => {
     setLoading(true);
@@ -59,6 +69,7 @@ export const DocumentIntelligencePage: React.FC = () => {
     const target = detailed.documents.find((d: any) => d.id === doc.id);
     setSelectedDoc(target || doc);
     setIsEditingFields(false);
+    setSaveError(null);
     if (target?.extractions?.[0]?.extractedFieldsJson) {
       setEditedFields(JSON.parse(target.extractions[0].extractedFieldsJson));
     } else {
@@ -69,6 +80,7 @@ export const DocumentIntelligencePage: React.FC = () => {
   const handleRunOcr = async () => {
     if (!selectedDoc) return;
     setOcrRunning(true);
+    setSaveError(null);
     try {
       const res = await documentService.triggerOcr(selectedDoc.id);
       setSelectedDoc((prev: any) => ({
@@ -85,8 +97,9 @@ export const DocumentIntelligencePage: React.FC = () => {
         ],
       }));
       setEditedFields(res.fields);
-    } catch (err) {
+    } catch (err: any) {
       console.error(err);
+      setSaveError(err.response?.data?.message || 'Failed to trigger OCR');
     } finally {
       setOcrRunning(false);
     }
@@ -94,11 +107,16 @@ export const DocumentIntelligencePage: React.FC = () => {
 
   const handleSaveFields = async () => {
     if (!selectedDoc) return;
+    setIsSaving(true);
+    setSaveError(null);
     try {
       await documentService.updateFields(selectedDoc.id, editedFields, 'Officer manually verified fields');
       setIsEditingFields(false);
-    } catch (err) {
+    } catch (err: any) {
       console.error(err);
+      setSaveError(err.response?.data?.message || 'Failed to update fields. Ensure you have the required officer role.');
+    } finally {
+      setIsSaving(false);
     }
   };
 
@@ -215,30 +233,47 @@ export const DocumentIntelligencePage: React.FC = () => {
                   <h3 className="text-xs font-bold text-slate-900 dark:text-white uppercase tracking-wider">
                     Detected Structured Regulatory Entities
                   </h3>
-                  {!isEditingFields ? (
-                    <button
-                      onClick={() => setIsEditingFields(true)}
-                      className="text-xs text-indigo-600 dark:text-indigo-400 hover:underline flex items-center"
-                    >
-                      <Edit2 className="w-3 h-3 mr-1" /> Edit Fields
-                    </button>
+                  {canEditFields ? (
+                    !isEditingFields ? (
+                      <button
+                        onClick={() => setIsEditingFields(true)}
+                        className="text-xs text-indigo-600 dark:text-indigo-400 hover:underline flex items-center"
+                      >
+                        <Edit2 className="w-3 h-3 mr-1" /> Edit Fields
+                      </button>
+                    ) : (
+                      <div className="flex items-center space-x-2">
+                        <button
+                          onClick={handleSaveFields}
+                          disabled={isSaving}
+                          className="text-xs text-emerald-600 font-semibold flex items-center hover:text-emerald-700 disabled:opacity-50"
+                        >
+                          <Check className="w-3 h-3 mr-1" /> {isSaving ? 'Saving...' : 'Save'}
+                        </button>
+                        <button
+                          onClick={() => {
+                            setIsEditingFields(false);
+                            setSaveError(null);
+                          }}
+                          className="text-xs text-slate-400 hover:text-slate-600 flex items-center"
+                        >
+                          <X className="w-3 h-3 mr-1" /> Cancel
+                        </button>
+                      </div>
+                    )
                   ) : (
-                    <div className="flex items-center space-x-2">
-                      <button
-                        onClick={handleSaveFields}
-                        className="text-xs text-emerald-600 font-semibold flex items-center"
-                      >
-                        <Check className="w-3 h-3 mr-1" /> Save
-                      </button>
-                      <button
-                        onClick={() => setIsEditingFields(false)}
-                        className="text-xs text-slate-400 flex items-center"
-                      >
-                        <X className="w-3 h-3 mr-1" /> Cancel
-                      </button>
-                    </div>
+                    <span className="text-[11px] text-slate-400 flex items-center" title="Scrutiny field editing requires Officer or Admin role">
+                      <Lock className="w-3 h-3 mr-1 text-slate-400" /> Read-only (Officer Scrutiny)
+                    </span>
                   )}
                 </div>
+
+                {saveError && (
+                  <div className="mb-3 p-2 bg-rose-50 dark:bg-rose-950/40 border border-rose-200 dark:border-rose-800 rounded-lg text-xs text-rose-700 dark:text-rose-300 flex items-center space-x-2">
+                    <AlertTriangle className="w-4 h-4 shrink-0 text-rose-500" />
+                    <span>{saveError}</span>
+                  </div>
+                )}
 
                 <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
                   {Object.entries(editedFields || {}).map(([key, val]) => (
@@ -297,3 +332,4 @@ export const DocumentIntelligencePage: React.FC = () => {
     </div>
   );
 };
+

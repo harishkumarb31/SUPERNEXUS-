@@ -44,3 +44,4 @@
 - **Action:** Use the top bar **Role Switcher** to switch to `Institution Principal`.
 - **Speaker:** "In 1 click, we demonstrate strict role-based isolation. The principal sees only Apex Institute's applications and documents, preventing any cross-institutional data leakage."
 - **Speaker:** "RegulaFlow AI is built with Node.js, TypeScript, React, Tailwind, and Prisma ORM, fully tested with 100% test passing rates. Thank you, and we welcome your questions!"
+

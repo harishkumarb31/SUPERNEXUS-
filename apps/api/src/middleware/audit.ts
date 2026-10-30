@@ -49,3 +49,4 @@ export async function logAuditEvent(params: AuditParams): Promise<void> {
     console.error('[Audit Log Error]', err);
   }
 }
+

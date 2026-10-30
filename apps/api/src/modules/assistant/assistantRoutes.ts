@@ -9,3 +9,4 @@ assistantRouter.use(authenticate);
 assistantRouter.post('/query', AssistantController.query);
 assistantRouter.get('/corpus', AssistantController.getCorpus);
 assistantRouter.get('/global-search', AssistantController.globalSearch);
+

@@ -46,3 +46,4 @@ export function errorHandler(
     error: 'Internal server error occurred. Please contact the administrator.',
   });
 }
+

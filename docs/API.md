@@ -180,3 +180,4 @@ Queries AICTE Approval Process Handbook (APH 2024-2027) with grounded citations.
 
 ### `GET /audit`
 Returns chronological audit events with actor, action, entity type, reason, IP address, and before/after mutation diffs.
+

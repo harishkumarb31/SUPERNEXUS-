@@ -46,6 +46,25 @@ export class NotificationController {
   static async markAsRead(req: Request, res: Response, next: NextFunction) {
     try {
       const { id } = req.params;
+      const user = req.user!;
+
+      const notification = await prisma.notification.findUnique({
+        where: { id },
+      });
+
+      if (!notification) {
+        throw new AppError('Notification not found', 404);
+      }
+
+      // Check ownership: user can only mark their own notification or institution's notification
+      const isOwner = notification.userId === user.id || 
+        (user.institutionId && notification.institutionId === user.institutionId);
+      
+      const isPrivileged = user.role === 'SYSTEM_ADMIN';
+
+      if (!isOwner && !isPrivileged) {
+        throw new AppError('Unauthorized to update this notification', 403);
+      }
 
       const updated = await prisma.notification.update({
         where: { id },
@@ -93,3 +112,4 @@ export class NotificationController {
     }
   }
 }
+

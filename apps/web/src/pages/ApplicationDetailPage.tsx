@@ -45,6 +45,38 @@ export const ApplicationDetailPage: React.FC = () => {
   const [targetStage, setTargetStage] = useState<ApplicationStage>(ApplicationStage.UNDER_SCRUTINY);
   const [transitionReason, setTransitionReason] = useState('');
   const [transitionSubmitting, setTransitionSubmitting] = useState(false);
+  const [transitionError, setTransitionError] = useState('');
+
+  const validTransitionsMap: Record<string, ApplicationStage[]> = {
+    [ApplicationStage.DRAFT]: [ApplicationStage.SUBMITTED],
+    [ApplicationStage.SUBMITTED]: [ApplicationStage.UNDER_SCRUTINY, ApplicationStage.CLOSED],
+    [ApplicationStage.UNDER_SCRUTINY]: [
+      ApplicationStage.DEFICIENCY_RAISED,
+      ApplicationStage.AWAITING_EVC,
+      ApplicationStage.UNDER_REVIEW,
+      ApplicationStage.CLOSED,
+    ],
+    [ApplicationStage.DEFICIENCY_RAISED]: [
+      ApplicationStage.RETURNED_FOR_CORRECTION,
+      ApplicationStage.UNDER_SCRUTINY,
+    ],
+    [ApplicationStage.RETURNED_FOR_CORRECTION]: [ApplicationStage.RESUBMITTED],
+    [ApplicationStage.RESUBMITTED]: [ApplicationStage.UNDER_SCRUTINY],
+    [ApplicationStage.AWAITING_EVC]: [ApplicationStage.UNDER_REVIEW, ApplicationStage.DEFICIENCY_RAISED],
+    [ApplicationStage.UNDER_REVIEW]: [
+      ApplicationStage.AWAITING_DECISION,
+      ApplicationStage.DEFICIENCY_RAISED,
+      ApplicationStage.CLOSED,
+    ],
+    [ApplicationStage.AWAITING_DECISION]: [
+      ApplicationStage.APPROVED,
+      ApplicationStage.REJECTED,
+      ApplicationStage.UNDER_REVIEW,
+    ],
+    [ApplicationStage.APPROVED]: [ApplicationStage.CLOSED],
+    [ApplicationStage.REJECTED]: [ApplicationStage.CLOSED],
+    [ApplicationStage.CLOSED]: [],
+  };
 
   // OCR Extraction Modal
   const [selectedExtraction, setSelectedExtraction] = useState<any>(null);
@@ -99,13 +131,33 @@ export const ApplicationDetailPage: React.FC = () => {
     if (!id) return;
 
     setTransitionSubmitting(true);
+    setTransitionError('');
     try {
       await applicationService.transition(id, targetStage, transitionReason);
       setShowTransitionModal(false);
       setTransitionReason('');
       await fetchApplication();
     } catch (err: any) {
-      alert(err.response?.data?.error || 'Stage transition failed');
+      setTransitionError(err.response?.data?.error || 'Stage transition failed');
+    } finally {
+      setTransitionSubmitting(false);
+    }
+  };
+
+  const handleResubmitApplication = async () => {
+    if (!id) return;
+    if (!confirm('Confirm resubmission of corrected documentation to AICTE regional scrutiny?')) return;
+
+    setTransitionSubmitting(true);
+    try {
+      await applicationService.transition(
+        id,
+        ApplicationStage.RESUBMITTED,
+        'Institution uploaded rectified documentation and resubmitted application for re-scrutiny'
+      );
+      await fetchApplication();
+    } catch (err: any) {
+      alert(err.response?.data?.error || 'Resubmission failed');
     } finally {
       setTransitionSubmitting(false);
     }
@@ -215,19 +267,26 @@ export const ApplicationDetailPage: React.FC = () => {
               </button>
             )}
 
+            {application.currentStage === ApplicationStage.RETURNED_FOR_CORRECTION && user?.role === UserRole.INSTITUTION_USER && (
+              <button
+                onClick={handleResubmitApplication}
+                disabled={transitionSubmitting}
+                className="flex items-center space-x-1.5 px-4 py-2 text-xs font-semibold rounded-lg bg-indigo-600 text-white hover:bg-indigo-700 shadow-sm disabled:opacity-50"
+              >
+                <CheckCircle2 className="w-4 h-4" />
+                <span>{transitionSubmitting ? 'Resubmitting...' : 'Resubmit Corrected Application'}</span>
+              </button>
+            )}
+
             {user?.role !== UserRole.INSTITUTION_USER && (
               <button
                 onClick={() => {
-                  setShowTransitionModal(true);
-                  if (application.currentStage === ApplicationStage.SUBMITTED) {
-                    setTargetStage(ApplicationStage.UNDER_SCRUTINY);
-                  } else if (application.currentStage === ApplicationStage.UNDER_SCRUTINY) {
-                    setTargetStage(ApplicationStage.DEFICIENCY_RAISED);
-                  } else if (application.currentStage === ApplicationStage.UNDER_REVIEW) {
-                    setTargetStage(ApplicationStage.AWAITING_DECISION);
-                  } else if (application.currentStage === ApplicationStage.AWAITING_DECISION) {
-                    setTargetStage(ApplicationStage.APPROVED);
+                  setTransitionError('');
+                  const allowed = validTransitionsMap[application.currentStage] || [];
+                  if (allowed.length > 0) {
+                    setTargetStage(allowed[0]);
                   }
+                  setShowTransitionModal(true);
                 }}
                 className="flex items-center space-x-1.5 px-3.5 py-2 text-xs font-semibold rounded-lg bg-indigo-600 text-white hover:bg-indigo-700 shadow-sm"
               >
@@ -815,23 +874,30 @@ export const ApplicationDetailPage: React.FC = () => {
               </button>
             </div>
 
+            {transitionError && (
+              <div className="mt-3 p-3 rounded-lg bg-rose-50 dark:bg-rose-950/60 border border-rose-200 dark:border-rose-800 text-xs text-rose-700 dark:text-rose-300">
+                {transitionError}
+              </div>
+            )}
+
             <form onSubmit={handleTransition} className="mt-4 space-y-4 text-xs">
               <div>
                 <label className="block font-semibold mb-1">Target Stage</label>
-                <select
-                  value={targetStage}
-                  onChange={(e) => setTargetStage(e.target.value as ApplicationStage)}
-                  className="w-full px-3 py-2 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg text-slate-900 dark:text-slate-100"
-                >
-                  <option value={ApplicationStage.UNDER_SCRUTINY}>Under Scrutiny</option>
-                  <option value={ApplicationStage.DEFICIENCY_RAISED}>Deficiency Raised</option>
-                  <option value={ApplicationStage.RETURNED_FOR_CORRECTION}>Returned for Correction</option>
-                  <option value={ApplicationStage.AWAITING_EVC}>Awaiting EVC</option>
-                  <option value={ApplicationStage.UNDER_REVIEW}>Under Review</option>
-                  <option value={ApplicationStage.AWAITING_DECISION}>Awaiting Decision</option>
-                  <option value={ApplicationStage.APPROVED}>Approved</option>
-                  <option value={ApplicationStage.REJECTED}>Rejected</option>
-                </select>
+                {(validTransitionsMap[application.currentStage] || []).length > 0 ? (
+                  <select
+                    value={targetStage}
+                    onChange={(e) => setTargetStage(e.target.value as ApplicationStage)}
+                    className="w-full px-3 py-2 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg text-slate-900 dark:text-slate-100"
+                  >
+                    {(validTransitionsMap[application.currentStage] || []).map((st) => (
+                      <option key={st} value={st}>
+                        {st.replace(/_/g, ' ')}
+                      </option>
+                    ))}
+                  </select>
+                ) : (
+                  <p className="text-slate-400 italic">No further transitions permissible for stage {application.currentStage}.</p>
+                )}
               </div>
 
               <div>
@@ -931,3 +997,4 @@ export const ApplicationDetailPage: React.FC = () => {
     </div>
   );
 };
+

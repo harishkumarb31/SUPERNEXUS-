@@ -248,3 +248,4 @@ model AuditEvent {
   userAgent           String?
   timestamp           DateTime            @default(now())
 }
+

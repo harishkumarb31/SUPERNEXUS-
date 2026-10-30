@@ -67,6 +67,22 @@ export const AppLayout: React.FC = () => {
     }
   };
 
+  const handleNotificationClick = async (notif: any) => {
+    if (!notif.read) {
+      try {
+        await notificationService.markAsRead(notif.id);
+        setNotifications((prev) =>
+          prev.map((n) => (n.id === notif.id ? { ...n, read: true } : n))
+        );
+        setUnreadCount((prev) => Math.max(0, prev - 1));
+      } catch (e) {
+        console.error('Failed to mark notification as read:', e);
+      }
+    }
+    if (notif.link) navigate(notif.link);
+    setNotifMenuOpen(false);
+  };
+
   const navItems = [
     { name: 'Dashboard', path: '/dashboard', icon: LayoutDashboard },
     { name: 'Applications', path: '/applications', icon: FileText },
@@ -297,10 +313,7 @@ export const AppLayout: React.FC = () => {
                             className={`p-3 text-xs transition-colors cursor-pointer hover:bg-slate-50 dark:hover:bg-slate-800/50 ${
                               !notif.read ? 'bg-indigo-50/50 dark:bg-indigo-950/20' : ''
                             }`}
-                            onClick={() => {
-                              if (notif.link) navigate(notif.link);
-                              setNotifMenuOpen(false);
-                            }}
+                            onClick={() => handleNotificationClick(notif)}
                           >
                             <div className="flex items-start justify-between">
                               <span className="font-semibold text-slate-900 dark:text-slate-100">
@@ -341,3 +354,4 @@ export const AppLayout: React.FC = () => {
     </div>
   );
 };
+

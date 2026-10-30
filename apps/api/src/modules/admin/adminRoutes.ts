@@ -10,3 +10,4 @@ adminRouter.use(authenticate);
 adminRouter.get('/users', requireRole(UserRole.SYSTEM_ADMIN, UserRole.BUREAU_OFFICER), AdminController.listUsers);
 adminRouter.get('/institutions', AdminController.listInstitutions);
 adminRouter.get('/system-health', AdminController.getSystemHealth);
+

@@ -49,3 +49,4 @@ export function calculateFileChecksum(filePath: string): Promise<string> {
     stream.on('error', (err) => reject(err));
   });
 }
+

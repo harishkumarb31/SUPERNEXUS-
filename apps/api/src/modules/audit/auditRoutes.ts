@@ -7,3 +7,4 @@ export const auditRouter = Router();
 auditRouter.use(authenticate);
 
 auditRouter.get('/', AuditController.list);
+

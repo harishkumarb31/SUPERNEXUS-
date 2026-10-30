@@ -14,12 +14,18 @@ export class DocumentController {
   static async uploadDocument(req: Request, res: Response, next: NextFunction) {
     try {
       const file = req.file;
-      if (!file) {
-        throw new AppError('No document file was uploaded.', 400);
+      if (!file || file.size === 0) {
+        if (file && fs.existsSync(file.path)) {
+          fs.unlinkSync(file.path);
+        }
+        throw new AppError('Uploaded file is empty or missing. Please upload a valid document.', 400);
       }
 
       const { applicationId, documentType, expiryDate } = req.body;
       if (!applicationId || !documentType) {
+        if (file && fs.existsSync(file.path)) {
+          fs.unlinkSync(file.path);
+        }
         throw new AppError('applicationId and documentType are required fields.', 400);
       }
 
@@ -28,7 +34,20 @@ export class DocumentController {
       });
 
       if (!application) {
+        if (file && fs.existsSync(file.path)) {
+          fs.unlinkSync(file.path);
+        }
         throw new AppError('Application not found', 404);
+      }
+
+      // Enforce institutional boundary (SEC-01)
+      if (req.user!.role === UserRole.INSTITUTION_USER) {
+        if (application.institutionId !== req.user!.institutionId) {
+          if (file && fs.existsSync(file.path)) {
+            fs.unlinkSync(file.path);
+          }
+          throw new AppError('Forbidden: Access denied to other institutions\' applications.', 403);
+        }
       }
 
       // Check SHA256 checksum
@@ -157,12 +176,16 @@ export class DocumentController {
 
       if (!doc) throw new AppError('Document not found', 404);
 
-      if (
-        user.role === UserRole.INSTITUTION_USER &&
-        doc.application.currentStage !== 'DRAFT' &&
-        doc.application.currentStage !== 'RETURNED_FOR_CORRECTION'
-      ) {
-        throw new AppError('Documents can only be deleted during DRAFT or RETURNED stages.', 400);
+      if (user.role === UserRole.INSTITUTION_USER) {
+        if (doc.application.institutionId !== user.institutionId) {
+          throw new AppError('Forbidden: Access denied to other institutions\' documents.', 403);
+        }
+        if (
+          doc.application.currentStage !== 'DRAFT' &&
+          doc.application.currentStage !== 'RETURNED_FOR_CORRECTION'
+        ) {
+          throw new AppError('Documents can only be deleted during DRAFT or RETURNED stages.', 400);
+        }
       }
 
       const filePath = path.isAbsolute(doc.filePath)
@@ -193,3 +216,4 @@ export class DocumentController {
     }
   }
 }
+

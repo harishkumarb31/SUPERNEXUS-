@@ -95,7 +95,17 @@ export class ComplianceController {
   static async resolve(req: Request, res: Response, next: NextFunction) {
     try {
       const { id } = req.params;
+      const user = req.user!;
       const { evidenceDocumentId, completionNotes } = req.body;
+
+      const obligation = await prisma.complianceObligation.findUnique({ where: { id } });
+      if (!obligation) {
+        throw new AppError('Compliance obligation not found', 404);
+      }
+
+      if (user.role === UserRole.INSTITUTION_USER && obligation.institutionId !== user.institutionId) {
+        throw new AppError('Forbidden: Access denied to other institutions\' compliance records.', 403);
+      }
 
       const updated = await prisma.complianceObligation.update({
         where: { id },
@@ -134,3 +144,4 @@ export class ComplianceController {
     }
   }
 }
+

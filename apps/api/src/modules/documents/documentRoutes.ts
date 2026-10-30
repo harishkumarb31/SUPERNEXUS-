@@ -10,3 +10,4 @@ documentRouter.use(authenticate);
 documentRouter.post('/upload', upload.single('file'), DocumentController.uploadDocument);
 documentRouter.get('/:id/download', DocumentController.downloadSecure);
 documentRouter.delete('/:id', DocumentController.deleteDocument);
+

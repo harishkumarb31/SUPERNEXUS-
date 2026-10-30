@@ -43,3 +43,4 @@ applicationRouter.post(
   requireRole(UserRole.REGIONAL_OFFICER, UserRole.BUREAU_OFFICER, UserRole.SYSTEM_ADMIN),
   ApplicationController.assignOfficer
 );
+

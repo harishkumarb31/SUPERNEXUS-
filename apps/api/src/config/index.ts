@@ -16,3 +16,4 @@ export const config = {
   aiProvider: process.env.AI_PROVIDER || 'local-grounded',
   clientUrl: process.env.CLIENT_URL || 'http://localhost:5173',
 };
+
