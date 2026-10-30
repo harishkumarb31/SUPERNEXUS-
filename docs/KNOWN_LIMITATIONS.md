@@ -23,3 +23,4 @@
 
 5. **Frontend Bundle Size**:
    - The single bundled vendor chunk is currently ~790 kB minified (gzip ~219 kB) containing Tailwind CSS, Lucide icons, and Chart.js/Recharts. In an enterprise release, route-based dynamic `import()` code-splitting can divide chunks below 200 kB.
+
