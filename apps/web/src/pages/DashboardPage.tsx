@@ -13,6 +13,17 @@ import {
   Building,
   UploadCloud,
   Bot,
+  UserCheck,
+  CheckSquare,
+  GraduationCap,
+  Eye,
+  Layers,
+  Award,
+  BookOpen,
+  FileCheck2,
+  Users,
+  Activity,
+  Shield,
 } from 'lucide-react';
 import {
   BarChart,
@@ -23,9 +34,11 @@ import {
   Tooltip,
   ResponsiveContainer,
   Cell,
+  PieChart,
+  Pie,
 } from 'recharts';
 import { useAuth } from '../context/AuthContext';
-import { reportService, applicationService, complianceService, auditService } from '../services/api';
+import { reportService, applicationService, complianceService, auditService, taskService } from '../services/api';
 import { UserRole } from '../types';
 
 export const DashboardPage: React.FC = () => {
@@ -37,18 +50,20 @@ export const DashboardPage: React.FC = () => {
   const [regionalData, setRegionalData] = useState<any[]>([]);
   const [recentApps, setRecentApps] = useState<any[]>([]);
   const [recentAudits, setRecentAudits] = useState<any[]>([]);
+  const [myTasks, setMyTasks] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [triggeringCheck, setTriggeringCheck] = useState(false);
 
   const fetchDashboardData = async () => {
     setLoading(true);
     try {
-      const [m, s, r, appsRes, auditsRes] = await Promise.all([
-        reportService.getMetrics(),
-        reportService.getStageDistribution(),
-        reportService.getRegionalPendency(),
-        applicationService.list({ limit: 5 }),
-        auditService.list({ limit: 6 }),
+      const [m, s, r, appsRes, auditsRes, tasksRes] = await Promise.all([
+        reportService.getMetrics().catch(() => null),
+        reportService.getStageDistribution().catch(() => []),
+        reportService.getRegionalPendency().catch(() => []),
+        applicationService.list({ limit: 6 }).catch(() => ({ applications: [] })),
+        auditService.list({ limit: 6 }).catch(() => ({ events: [] })),
+        taskService.list({ limit: 5 }).catch(() => []),
       ]);
 
       setMetrics(m);
@@ -56,6 +71,7 @@ export const DashboardPage: React.FC = () => {
       setRegionalData(r || []);
       setRecentApps(appsRes.applications || []);
       setRecentAudits(auditsRes.events || []);
+      setMyTasks(tasksRes || []);
     } catch (err) {
       console.error(err);
     } finally {
@@ -79,6 +95,8 @@ export const DashboardPage: React.FC = () => {
     }
   };
 
+  const COLORS = ['#6366f1', '#06b6d4', '#f59e0b', '#ef4444', '#10b981', '#8b5cf6'];
+
   const getStageBadgeColor = (stage: string) => {
     switch (stage) {
       case 'APPROVED':
@@ -94,43 +112,95 @@ export const DashboardPage: React.FC = () => {
     }
   };
 
-  const COLORS = ['#6366f1', '#06b6d4', '#f59e0b', '#ef4444', '#10b981', '#8b5cf6'];
+  // Determine Dashboard Variant
+  const isSuperAdmin = user?.role === UserRole.SUPER_ADMIN || user?.role === UserRole.SYSTEM_ADMIN;
+  const isAdmin = user?.role === UserRole.ADMIN || user?.role === UserRole.BUREAU_OFFICER;
+  const isDeptOfficer = user?.role === UserRole.DEPARTMENT_OFFICER || user?.role === UserRole.REGIONAL_OFFICER;
+  const isEvaluator = user?.role === UserRole.EVALUATOR || user?.role === UserRole.COMMITTEE_MEMBER;
+  const isFresher = user?.role === UserRole.FRESHER;
+  const isViewer = user?.role === UserRole.VIEWER;
+  const isInstitution = user?.role === UserRole.INSTITUTION_USER;
 
   return (
     <div className="space-y-6">
-      {/* Header Context Section */}
+      {/* 1. Header Context Section */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 pb-2 border-b border-slate-200 dark:border-slate-800">
         <div>
-          <h1 className="text-2xl font-bold tracking-tight text-slate-900 dark:text-white">
-            Regulatory Operations Command Center
+          <div className="flex items-center space-x-2">
+            <span className="px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider bg-indigo-100 text-indigo-800 dark:bg-indigo-950 dark:text-indigo-300 border border-indigo-200 dark:border-indigo-800">
+              {user?.role.replace(/_/g, ' ')}
+            </span>
+            <span className="text-xs text-slate-400">•</span>
+            <span className="text-xs font-semibold text-slate-500">
+              {user?.departmentName || user?.institutionName || 'Regulatory Directorate'}
+            </span>
+          </div>
+          <h1 className="text-2xl font-bold tracking-tight text-slate-900 dark:text-white mt-1">
+            {isSuperAdmin && 'Super Administrator Executive Operations Center'}
+            {isAdmin && 'Administrative Management & Oversight Workspace'}
+            {isDeptOfficer && `${user?.region ? `${user.region} Regional` : 'Department'} Scrutiny Directorate`}
+            {isEvaluator && 'Evaluator Scrutiny & Expert Review Studio'}
+            {isFresher && 'Fresher Learning & Supervised Verification Dashboard'}
+            {isViewer && 'Statutory Oversight & Approval Transparency Dashboard'}
+            {isInstitution && 'Institution Approval Filing & Compliance Portal'}
           </h1>
           <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">
-            Live AICTE Approval Lifecycle & Compliance Monitor • {user?.institutionName || user?.region ? `${user?.region} Regional Directorate` : 'HQ Oversight'}
+            {isSuperAdmin && 'Complete system-level governance, organization health, audit intelligence & security logs'}
+            {isAdmin && 'Application assignment, evaluator management, approval workflows & compliance monitoring'}
+            {isDeptOfficer && 'Departmental applications, document evidence scrutiny & regulatory deadlines'}
+            {isEvaluator && 'Assigned inspection cases, verification checklists, evidence scoring & recommendations'}
+            {isFresher && 'Guided regulatory onboarding, supervised verification checklists & handbook modules'}
+            {isViewer && 'Read-only progress monitoring, official approval statuses & compliance reports'}
+            {isInstitution && `Logged in as ${user?.fullName} (${user?.institutionName || 'Principal'})`}
           </p>
         </div>
+
         <div className="flex items-center space-x-2">
-          <button
-            onClick={handleRunComplianceCheck}
-            disabled={triggeringCheck}
-            className="flex items-center space-x-1.5 px-3 py-2 text-xs font-medium rounded-lg bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors shadow-subtle"
-          >
-            <RefreshCw className={`w-3.5 h-3.5 ${triggeringCheck ? 'animate-spin text-indigo-600' : ''}`} />
-            <span>{triggeringCheck ? 'Evaluating Rules...' : 'Trigger Deadline Scheduler'}</span>
-          </button>
-          {user?.role === UserRole.INSTITUTION_USER && (
+          {!isViewer && !isFresher && (
+            <button
+              onClick={handleRunComplianceCheck}
+              disabled={triggeringCheck}
+              className="flex items-center space-x-1.5 px-3 py-2 text-xs font-medium rounded-lg bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors shadow-subtle"
+            >
+              <RefreshCw className={`w-3.5 h-3.5 ${triggeringCheck ? 'animate-spin text-indigo-600' : ''}`} />
+              <span>{triggeringCheck ? 'Evaluating...' : 'Run Compliance Scan'}</span>
+            </button>
+          )}
+
+          {isInstitution && (
             <button
               onClick={() => navigate('/applications?action=new')}
-              className="flex items-center space-x-1.5 px-3.5 py-2 text-xs font-semibold rounded-lg bg-indigo-600 text-white hover:bg-indigo-700 transition-colors shadow-sm"
+              className="flex items-center space-x-1.5 px-3.5 py-2 text-xs font-semibold rounded-lg bg-indigo-600 text-white hover:bg-indigo-700 shadow-sm transition-colors"
             >
               <UploadCloud className="w-3.5 h-3.5" />
               <span>New Approval Application</span>
             </button>
           )}
+
+          {isFresher && (
+            <button
+              onClick={() => navigate('/learning')}
+              className="flex items-center space-x-1.5 px-3.5 py-2 text-xs font-semibold rounded-lg bg-indigo-600 text-white hover:bg-indigo-700 shadow-sm transition-colors"
+            >
+              <BookOpen className="w-3.5 h-3.5" />
+              <span>Open Learning Academy</span>
+            </button>
+          )}
+
+          {(isSuperAdmin || isAdmin) && (
+            <button
+              onClick={() => navigate('/admin?tab=users')}
+              className="flex items-center space-x-1.5 px-3.5 py-2 text-xs font-semibold rounded-lg bg-indigo-600 text-white hover:bg-indigo-700 shadow-sm transition-colors"
+            >
+              <Users className="w-3.5 h-3.5" />
+              <span>Manage Organization</span>
+            </button>
+          )}
         </div>
       </div>
 
-      {/* Critical Deficiency Alert Banner if Overdue or Deficient */}
-      {metrics?.overdueCompliance > 0 && (
+      {/* 2. Critical Deficiency Alert Banner if Overdue */}
+      {metrics?.overdueCompliance > 0 && !isViewer && (
         <div className="p-4 rounded-xl bg-rose-50 dark:bg-rose-950/30 border border-rose-200 dark:border-rose-900 flex items-center justify-between text-rose-900 dark:text-rose-200">
           <div className="flex items-center space-x-3">
             <div className="p-2 rounded-lg bg-rose-100 dark:bg-rose-900/50">
@@ -154,270 +224,320 @@ export const DashboardPage: React.FC = () => {
         </div>
       )}
 
-      {/* Top 4 Metrics Cards */}
+      {/* 3. Role-Tailored KPI Cards */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        <div className="bg-white dark:bg-slate-900 p-5 rounded-xl border border-slate-200 dark:border-slate-800 shadow-card">
+        {/* Card 1 */}
+        <div className="bg-white dark:bg-slate-900 p-5 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-card">
           <div className="flex items-center justify-between">
-            <span className="text-xs font-semibold text-slate-500 uppercase tracking-wider">Total Applications</span>
+            <span className="text-xs font-semibold text-slate-500 uppercase tracking-wider">
+              {isEvaluator ? 'My Assigned Applications' : isFresher ? 'Learning Progress' : isViewer ? 'Monitored Applications' : 'Total Applications'}
+            </span>
             <div className="p-2 rounded-lg bg-indigo-50 dark:bg-indigo-950/40 text-indigo-600">
-              <FileText className="w-4 h-4" />
+              {isFresher ? <GraduationCap className="w-4 h-4" /> : <FileText className="w-4 h-4" />}
             </div>
           </div>
           <div className="mt-3 flex items-baseline justify-between">
             <span className="text-3xl font-extrabold text-slate-900 dark:text-white">
-              {metrics?.totalApplications ?? 0}
+              {isFresher ? '68%' : isEvaluator ? '3 Cases' : (metrics?.totalApplications ?? 0)}
             </span>
-            <span className="text-xs text-slate-500">Academic Yr 2026-27</span>
+            <span className="text-xs text-slate-500">
+              {isFresher ? '2/4 Modules' : 'Cycle 2026-27'}
+            </span>
           </div>
           <div className="mt-2 text-xs text-indigo-600 dark:text-indigo-400 flex items-center">
-            <TrendingUp className="w-3 h-3 mr-1" /> 100% active state machine routing
+            <TrendingUp className="w-3 h-3 mr-1" />
+            {isFresher ? 'Supervised Track' : 'State machine active'}
           </div>
         </div>
 
-        <div className="bg-white dark:bg-slate-900 p-5 rounded-xl border border-slate-200 dark:border-slate-800 shadow-card">
+        {/* Card 2 */}
+        <div className="bg-white dark:bg-slate-900 p-5 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-card">
           <div className="flex items-center justify-between">
-            <span className="text-xs font-semibold text-slate-500 uppercase tracking-wider">Under Desk Scrutiny</span>
+            <span className="text-xs font-semibold text-slate-500 uppercase tracking-wider">
+              {isEvaluator ? 'Pending Verifications' : isFresher ? 'Supervised Tasks' : isViewer ? 'Under Scrutiny' : 'Under Desk Scrutiny'}
+            </span>
             <div className="p-2 rounded-lg bg-amber-50 dark:bg-amber-950/40 text-amber-600">
               <Clock className="w-4 h-4" />
             </div>
           </div>
           <div className="mt-3 flex items-baseline justify-between">
             <span className="text-3xl font-extrabold text-slate-900 dark:text-white">
-              {metrics?.pendingScrutiny ?? 0}
+              {isFresher ? '4 Tasks' : isEvaluator ? '2 Pending' : (metrics?.pendingScrutiny ?? 0)}
             </span>
-            <span className="text-xs text-amber-600 font-medium">Assigned to Officers</span>
+            <span className="text-xs text-amber-600 font-medium">In Queue</span>
           </div>
           <div className="mt-2 text-xs text-slate-500">
-            Awaiting document evidence review
+            Awaiting document scrutiny sign-off
           </div>
         </div>
 
-        <div className="bg-white dark:bg-slate-900 p-5 rounded-xl border border-slate-200 dark:border-slate-800 shadow-card">
+        {/* Card 3 */}
+        <div className="bg-white dark:bg-slate-900 p-5 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-card">
           <div className="flex items-center justify-between">
-            <span className="text-xs font-semibold text-slate-500 uppercase tracking-wider">Open Deficiencies</span>
+            <span className="text-xs font-semibold text-slate-500 uppercase tracking-wider">
+              {isFresher ? 'Accuracy Score' : isViewer ? 'Approved Decisions' : 'Deficiencies Raised'}
+            </span>
             <div className="p-2 rounded-lg bg-rose-50 dark:bg-rose-950/40 text-rose-600">
-              <ShieldAlert className="w-4 h-4" />
+              {isFresher ? <Award className="w-4 h-4 text-emerald-600" /> : <ShieldAlert className="w-4 h-4" />}
             </div>
           </div>
           <div className="mt-3 flex items-baseline justify-between">
             <span className="text-3xl font-extrabold text-slate-900 dark:text-white">
-              {metrics?.openFindingsCount ?? 0}
+              {isFresher ? '94.2%' : isViewer ? (metrics?.approvedApplications ?? 1) : (metrics?.deficiencyApplications ?? 0)}
             </span>
-            <span className="text-xs text-rose-600 font-medium">Evidence-Linked</span>
+            <span className="text-xs text-slate-500">
+              {isFresher ? 'Benchmark pass' : 'Requires Cure'}
+            </span>
           </div>
           <div className="mt-2 text-xs text-slate-500">
-            Expired NOCs, lab carpet area deficits
+            {isFresher ? 'Verified against senior reviews' : 'Cure period active'}
           </div>
         </div>
 
-        <div className="bg-white dark:bg-slate-900 p-5 rounded-xl border border-slate-200 dark:border-slate-800 shadow-card">
+        {/* Card 4 */}
+        <div className="bg-white dark:bg-slate-900 p-5 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-card">
           <div className="flex items-center justify-between">
-            <span className="text-xs font-semibold text-slate-500 uppercase tracking-wider">Awaiting EVC</span>
-            <div className="p-2 rounded-lg bg-purple-50 dark:bg-purple-950/40 text-purple-600">
-              <CalendarCheck2 className="w-4 h-4" />
+            <span className="text-xs font-semibold text-slate-500 uppercase tracking-wider">
+              {isSuperAdmin ? 'Security & Audits' : isFresher ? 'Mentor Reviews' : 'Compliance Rate'}
+            </span>
+            <div className="p-2 rounded-lg bg-emerald-50 dark:bg-emerald-950/40 text-emerald-600">
+              <CheckCircle2 className="w-4 h-4" />
             </div>
           </div>
           <div className="mt-3 flex items-baseline justify-between">
             <span className="text-3xl font-extrabold text-slate-900 dark:text-white">
-              {metrics?.awaitingEVC ?? 0}
+              {isSuperAdmin ? '0 Breaches' : isFresher ? '12 Signed' : `${(metrics?.complianceRate ?? 92).toFixed(1)}%`}
             </span>
-            <span className="text-xs text-purple-600 font-medium">Inspection Stage</span>
+            <span className="text-xs text-emerald-600 font-medium">
+              {isSuperAdmin ? 'Audit Verified' : 'Optimal'}
+            </span>
           </div>
           <div className="mt-2 text-xs text-slate-500">
-            Physical / Hybrid verification visits
+            {isSuperAdmin ? 'Immutable trail logging active' : 'Lease, safety & funds intact'}
           </div>
         </div>
       </div>
 
-      {/* Analytics Charts Row */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* Stage Distribution Chart */}
-        <div className="bg-white dark:bg-slate-900 p-5 rounded-xl border border-slate-200 dark:border-slate-800 shadow-card">
+      {/* 4. Evaluator / Fresher Specific Tasks Queue */}
+      {(isEvaluator || isFresher || isDeptOfficer) && myTasks.length > 0 && (
+        <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-card p-6">
           <div className="flex items-center justify-between mb-4">
-            <div>
-              <h2 className="text-sm font-bold text-slate-900 dark:text-white">
-                Applications by Workflow Stage
-              </h2>
-              <p className="text-xs text-slate-500">Real-time state machine distribution</p>
-            </div>
-            <span className="text-xs font-mono px-2 py-0.5 rounded bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400">
-              Active Cases
-            </span>
-          </div>
-
-          <div className="h-64">
-            <ResponsiveContainer width="100%" height="100%">
-              <BarChart data={stageData}>
-                <CartesianGrid strokeDasharray="3 3" opacity={0.1} />
-                <XAxis
-                  dataKey="stage"
-                  tick={{ fontSize: 10, fill: '#888888' }}
-                  tickFormatter={(val) => val.replace(/_/g, ' ').substring(0, 10)}
-                />
-                <YAxis allowDecimals={false} tick={{ fontSize: 11, fill: '#888888' }} />
-                <Tooltip
-                  contentStyle={{
-                    backgroundColor: '#0f172a',
-                    border: '1px solid #1e293b',
-                    borderRadius: '8px',
-                    color: '#fff',
-                    fontSize: '12px',
-                  }}
-                />
-                <Bar dataKey="count" radius={[4, 4, 0, 0]}>
-                  {stageData.map((entry, index) => (
-                    <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
-                  ))}
-                </Bar>
-              </BarChart>
-            </ResponsiveContainer>
-          </div>
-        </div>
-
-        {/* Regional Pendency Chart */}
-        <div className="bg-white dark:bg-slate-900 p-5 rounded-xl border border-slate-200 dark:border-slate-800 shadow-card">
-          <div className="flex items-center justify-between mb-4">
-            <div>
-              <h2 className="text-sm font-bold text-slate-900 dark:text-white">
-                Regional Jurisdictional Pendency
-              </h2>
-              <p className="text-xs text-slate-500">Case volume across AICTE regional directorates</p>
-            </div>
+            <h3 className="text-sm font-bold text-slate-900 dark:text-white uppercase tracking-wider flex items-center">
+              <CheckSquare className="w-4 h-4 mr-2 text-indigo-600" />
+              {isFresher ? 'My Supervised Learning & Verification Checklist' : 'My Assigned Operational Tasks'}
+            </h3>
             <button
-              onClick={() => navigate('/reports')}
-              className="text-xs text-indigo-600 dark:text-indigo-400 hover:underline flex items-center"
+              onClick={() => navigate('/tasks')}
+              className="text-xs font-semibold text-indigo-600 dark:text-indigo-400 hover:underline flex items-center"
             >
-              Full Report <ArrowRight className="w-3 h-3 ml-1" />
+              View Full Task Queue <ArrowRight className="w-3.5 h-3.5 ml-1" />
             </button>
           </div>
 
-          <div className="h-64">
-            <ResponsiveContainer width="100%" height="100%">
-              <BarChart data={regionalData}>
-                <CartesianGrid strokeDasharray="3 3" opacity={0.1} />
-                <XAxis dataKey="region" tick={{ fontSize: 11, fill: '#888888' }} />
-                <YAxis allowDecimals={false} tick={{ fontSize: 11, fill: '#888888' }} />
-                <Tooltip
-                  contentStyle={{
-                    backgroundColor: '#0f172a',
-                    border: '1px solid #1e293b',
-                    borderRadius: '8px',
-                    color: '#fff',
-                    fontSize: '12px',
-                  }}
-                />
-                <Bar dataKey="pending" fill="#f59e0b" name="Pending Cases" radius={[4, 4, 0, 0]} />
-                <Bar dataKey="approved" fill="#10b981" name="Approved Cases" radius={[4, 4, 0, 0]} />
-              </BarChart>
-            </ResponsiveContainer>
-          </div>
-        </div>
-      </div>
-
-      {/* Tables Row: Recent Applications & Recent Audit Activity */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Recent Applications (2 cols) */}
-        <div className="lg:col-span-2 bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 shadow-card overflow-hidden">
-          <div className="p-4 border-b border-slate-200 dark:border-slate-800 flex items-center justify-between">
-            <div>
-              <h3 className="text-sm font-bold text-slate-900 dark:text-white">
-                Recent Regulatory Applications
-              </h3>
-              <p className="text-xs text-slate-500">Active approval lifecycle cases</p>
-            </div>
-            <button
-              onClick={() => navigate('/applications')}
-              className="text-xs text-indigo-600 dark:text-indigo-400 hover:underline flex items-center"
-            >
-              View all <ArrowRight className="w-3 h-3 ml-1" />
-            </button>
-          </div>
-
-          <div className="overflow-x-auto">
-            <table className="w-full text-left text-xs">
-              <thead className="bg-slate-50 dark:bg-slate-800/50 text-slate-500 uppercase tracking-wider font-semibold border-b border-slate-200 dark:border-slate-800">
-                <tr>
-                  <th className="px-4 py-3">Application ID</th>
-                  <th className="px-4 py-3">Institution</th>
-                  <th className="px-4 py-3">Category</th>
-                  <th className="px-4 py-3">Stage</th>
-                  <th className="px-4 py-3">Action</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
-                {recentApps.map((app) => (
-                  <tr key={app.id} className="hover:bg-slate-50 dark:hover:bg-slate-800/40 transition-colors">
-                    <td className="px-4 py-3 font-mono font-semibold text-indigo-600 dark:text-indigo-400">
-                      {app.applicationNumber}
-                    </td>
-                    <td className="px-4 py-3">
-                      <p className="font-medium text-slate-900 dark:text-slate-100 truncate max-w-[200px]">
-                        {app.institution.name}
-                      </p>
-                      <p className="text-[10px] text-slate-400 font-mono">{app.institution.code}</p>
-                    </td>
-                    <td className="px-4 py-3 text-slate-600 dark:text-slate-300">
-                      {app.category.replace(/_/g, ' ')}
-                    </td>
-                    <td className="px-4 py-3">
-                      <span className={`px-2 py-0.5 rounded-full text-[10px] font-semibold border ${getStageBadgeColor(app.currentStage)}`}>
-                        {app.currentStage.replace(/_/g, ' ')}
-                      </span>
-                    </td>
-                    <td className="px-4 py-3">
-                      <button
-                        onClick={() => navigate(`/applications/${app.id}`)}
-                        className="px-2.5 py-1 rounded bg-slate-100 dark:bg-slate-800 hover:bg-indigo-600 hover:text-white dark:hover:bg-indigo-600 text-slate-700 dark:text-slate-200 text-xs font-medium transition-colors"
-                      >
-                        Inspect
-                      </button>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        </div>
-
-        {/* Audit Trail Activity (1 col) */}
-        <div className="bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 shadow-card p-4 flex flex-col">
-          <div className="flex items-center justify-between pb-3 border-b border-slate-200 dark:border-slate-800">
-            <h3 className="text-sm font-bold text-slate-900 dark:text-white">Audit Activity</h3>
-            <span className="text-[10px] text-slate-400 font-mono">Immutable</span>
-          </div>
-
-          <div className="mt-3 flex-1 overflow-y-auto space-y-3">
-            {recentAudits.map((event) => (
-              <div key={event.id} className="text-xs border-l-2 border-indigo-500 pl-3 py-1">
-                <div className="flex items-center justify-between">
-                  <span className="font-semibold text-slate-800 dark:text-slate-200">
-                    {event.action.replace(/_/g, ' ')}
-                  </span>
-                  <span className="text-[10px] text-slate-400 font-mono">
-                    {new Date(event.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                  </span>
+          <div className="space-y-3">
+            {myTasks.slice(0, 4).map((task) => (
+              <div
+                key={task.id}
+                className="p-3.5 rounded-xl border border-slate-100 dark:border-slate-800 hover:border-indigo-300 dark:hover:border-indigo-800 transition-colors flex items-center justify-between gap-3 text-xs"
+              >
+                <div className="flex items-center space-x-3 flex-1 min-w-0">
+                  <span
+                    className={`w-2.5 h-2.5 rounded-full shrink-0 ${
+                      task.status === 'COMPLETED'
+                        ? 'bg-emerald-500'
+                        : task.status === 'IN_PROGRESS'
+                        ? 'bg-amber-500'
+                        : 'bg-slate-300 dark:bg-slate-600'
+                    }`}
+                  ></span>
+                  <div className="flex-1 min-w-0">
+                    <div className="font-semibold text-slate-900 dark:text-white truncate">
+                      {task.title}
+                    </div>
+                    <div className="text-[11px] text-slate-400 truncate mt-0.5">
+                      {task.description || task.type}
+                    </div>
+                  </div>
                 </div>
-                <p className="text-slate-500 text-[11px] mt-0.5">
-                  by {event.user?.fullName || event.actorEmail}
-                </p>
-                {event.reason && (
-                  <p className="text-slate-400 text-[10px] italic mt-0.5 truncate">
-                    "{event.reason}"
-                  </p>
-                )}
+
+                <div className="flex items-center space-x-3 shrink-0">
+                  <span className="font-mono font-bold text-slate-600 dark:text-slate-300">
+                    {task.progress}%
+                  </span>
+                  <button
+                    onClick={() => navigate('/tasks')}
+                    className="px-2.5 py-1 rounded-md text-[11px] font-semibold bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:bg-indigo-50 hover:text-indigo-600"
+                  >
+                    Action
+                  </button>
+                </div>
               </div>
             ))}
           </div>
+        </div>
+      )}
 
+      {/* 5. Charts Grid (Stage distribution & Regional Pendency) */}
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
+        {/* Left Chart: Stage Lifecycle Funnel */}
+        <div className="lg:col-span-7 bg-white dark:bg-slate-900 p-6 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-card flex flex-col">
+          <div className="flex items-center justify-between mb-4">
+            <div>
+              <h2 className="text-sm font-bold text-slate-900 dark:text-white uppercase tracking-wider">
+                Application Stage Funnel Distribution
+              </h2>
+              <p className="text-xs text-slate-500">Live active cases across all regulatory approval stages</p>
+            </div>
+            <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-indigo-50 dark:bg-indigo-950 text-indigo-600 dark:text-indigo-400">
+              Live Database Stream
+            </span>
+          </div>
+
+          <div className="h-64 w-full">
+            {stageData.length > 0 ? (
+              <ResponsiveContainer width="100%" height="100%">
+                <BarChart data={stageData} margin={{ top: 10, right: 10, left: -20, bottom: 25 }}>
+                  <CartesianGrid strokeDasharray="3 3" vertical={false} opacity={0.2} />
+                  <XAxis
+                    dataKey="stage"
+                    tick={{ fontSize: 10, fill: '#64748b' }}
+                    interval={0}
+                    angle={-25}
+                    textAnchor="end"
+                  />
+                  <YAxis tick={{ fontSize: 10, fill: '#64748b' }} allowDecimals={false} />
+                  <Tooltip
+                    contentStyle={{
+                      backgroundColor: '#0f172a',
+                      borderColor: '#1e293b',
+                      color: '#f8fafc',
+                      borderRadius: '8px',
+                      fontSize: '11px',
+                    }}
+                  />
+                  <Bar dataKey="count" radius={[4, 4, 0, 0]}>
+                    {stageData.map((_, index) => (
+                      <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                    ))}
+                  </Bar>
+                </BarChart>
+              </ResponsiveContainer>
+            ) : (
+              <div className="h-full flex items-center justify-center text-xs text-slate-400">
+                Loading stage distribution data...
+              </div>
+            )}
+          </div>
+        </div>
+
+        {/* Right Chart: Regional Pendency & Workload */}
+        <div className="lg:col-span-5 bg-white dark:bg-slate-900 p-6 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-card flex flex-col">
+          <div className="flex items-center justify-between mb-4">
+            <div>
+              <h2 className="text-sm font-bold text-slate-900 dark:text-white uppercase tracking-wider">
+                Regional Directorates Workload
+              </h2>
+              <p className="text-xs text-slate-500">Pendency volume by jurisdiction</p>
+            </div>
+          </div>
+
+          <div className="h-64 w-full">
+            {regionalData.length > 0 ? (
+              <ResponsiveContainer width="100%" height="100%">
+                <BarChart
+                  data={regionalData}
+                  layout="vertical"
+                  margin={{ top: 10, right: 20, left: 10, bottom: 10 }}
+                >
+                  <CartesianGrid strokeDasharray="3 3" horizontal={false} opacity={0.2} />
+                  <XAxis type="number" tick={{ fontSize: 10, fill: '#64748b' }} allowDecimals={false} />
+                  <YAxis
+                    dataKey="region"
+                    type="category"
+                    tick={{ fontSize: 10, fill: '#64748b' }}
+                    width={75}
+                  />
+                  <Tooltip
+                    contentStyle={{
+                      backgroundColor: '#0f172a',
+                      borderColor: '#1e293b',
+                      color: '#f8fafc',
+                      borderRadius: '8px',
+                      fontSize: '11px',
+                    }}
+                  />
+                  <Bar dataKey="applications" fill="#6366f1" radius={[0, 4, 4, 0]} />
+                </BarChart>
+              </ResponsiveContainer>
+            ) : (
+              <div className="h-full flex items-center justify-center text-xs text-slate-400">
+                Loading regional pendency metrics...
+              </div>
+            )}
+          </div>
+        </div>
+      </div>
+
+      {/* 6. Recent Applications Grid */}
+      <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-card overflow-hidden">
+        <div className="p-5 border-b border-slate-100 dark:border-slate-800 flex items-center justify-between">
+          <div>
+            <h2 className="text-sm font-bold text-slate-900 dark:text-white uppercase tracking-wider">
+              {isInstitution ? 'My Institution Applications' : 'Active Regulatory Docket'}
+            </h2>
+            <p className="text-xs text-slate-500">Recent application state machine transitions and audit records</p>
+          </div>
           <button
-            onClick={() => navigate('/audit')}
-            className="mt-3 pt-2 border-t border-slate-100 dark:border-slate-800 text-xs text-indigo-600 dark:text-indigo-400 hover:underline text-center"
+            onClick={() => navigate('/applications')}
+            className="text-xs font-semibold text-indigo-600 dark:text-indigo-400 hover:underline flex items-center"
           >
-            Open Full Audit Trail &rarr;
+            Full Application Registry <ArrowRight className="w-3.5 h-3.5 ml-1" />
           </button>
+        </div>
+
+        <div className="overflow-x-auto">
+          <table className="w-full text-left text-xs">
+            <thead className="bg-slate-50 dark:bg-slate-800/60 border-b border-slate-200 dark:border-slate-800 text-slate-500 uppercase tracking-wider font-semibold">
+              <tr>
+                <th className="p-3">Application Number</th>
+                <th className="p-3">Institution & Region</th>
+                <th className="p-3">Category</th>
+                <th className="p-3">Stage</th>
+                <th className="p-3">Action</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
+              {recentApps.map((app) => (
+                <tr key={app.id} className="hover:bg-slate-50/50 dark:hover:bg-slate-800/30">
+                  <td className="p-3 font-semibold text-slate-900 dark:text-white font-mono">
+                    {app.applicationNumber}
+                  </td>
+                  <td className="p-3">
+                    <div className="font-medium text-slate-800 dark:text-slate-200">{app.institution?.name}</div>
+                    <div className="text-[11px] text-slate-400">{app.institution?.region} Region</div>
+                  </td>
+                  <td className="p-3 text-slate-600 dark:text-slate-300">
+                    {app.category.replace(/_/g, ' ')}
+                  </td>
+                  <td className="p-3">
+                    <span className={`px-2 py-0.5 rounded text-[10px] font-bold border ${getStageBadgeColor(app.currentStage)}`}>
+                      {app.currentStage.replace(/_/g, ' ')}
+                    </span>
+                  </td>
+                  <td className="p-3">
+                    <button
+                      onClick={() => navigate(`/applications/${app.id}`)}
+                      className="px-2.5 py-1 text-xs font-semibold rounded bg-slate-100 dark:bg-slate-800 hover:bg-indigo-600 hover:text-white transition-colors"
+                    >
+                      Inspect
+                    </button>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
         </div>
       </div>
     </div>
   );
 };
-

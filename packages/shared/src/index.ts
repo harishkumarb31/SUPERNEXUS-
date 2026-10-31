@@ -2,11 +2,205 @@
 // Smart India Hackathon 2026 - Problem Statement: SIH26262
 
 export enum UserRole {
+  // Enterprise Multi-Role Hierarchy
+  SUPER_ADMIN = 'SUPER_ADMIN',
+  ADMIN = 'ADMIN',
+  DEPARTMENT_OFFICER = 'DEPARTMENT_OFFICER',
+  EVALUATOR = 'EVALUATOR',
+  FRESHER = 'FRESHER',
+  VIEWER = 'VIEWER',
+
+  // Domain Roles (Interoperable with Enterprise System)
   INSTITUTION_USER = 'INSTITUTION_USER',
   REGIONAL_OFFICER = 'REGIONAL_OFFICER',
   BUREAU_OFFICER = 'BUREAU_OFFICER',
   COMMITTEE_MEMBER = 'COMMITTEE_MEMBER',
   SYSTEM_ADMIN = 'SYSTEM_ADMIN'
+}
+
+export enum Permission {
+  // User & Identity
+  USER_VIEW = 'user.view',
+  USER_CREATE = 'user.create',
+  USER_UPDATE = 'user.update',
+  USER_DELETE = 'user.delete',
+  ROLE_MANAGE = 'role.manage',
+
+  // Institution & Department
+  INSTITUTION_VIEW = 'institution.view',
+  INSTITUTION_MANAGE = 'institution.manage',
+  DEPARTMENT_VIEW = 'department.view',
+  DEPARTMENT_MANAGE = 'department.manage',
+
+  // Application & Workflow
+  APPLICATION_VIEW = 'application.view',
+  APPLICATION_CREATE = 'application.create',
+  APPLICATION_UPDATE = 'application.update',
+  APPLICATION_ASSIGN = 'application.assign',
+  APPLICATION_REVIEW = 'application.review',
+  APPLICATION_APPROVE = 'application.approve',
+
+  // Documents
+  DOCUMENT_VIEW = 'document.view',
+  DOCUMENT_UPLOAD = 'document.upload',
+  DOCUMENT_VERIFY = 'document.verify',
+
+  // Compliance
+  COMPLIANCE_VIEW = 'compliance.view',
+  COMPLIANCE_MANAGE = 'compliance.manage',
+
+  // Task & Learning
+  TASK_VIEW = 'task.view',
+  TASK_MANAGE = 'task.manage',
+  TASK_ASSIGN = 'task.assign',
+
+  // Reports & Analytics
+  REPORTS_VIEW = 'reports.view',
+  REPORTS_EXPORT = 'reports.export',
+
+  // Audit & Security
+  AUDIT_VIEW = 'audit.view',
+  SETTINGS_MANAGE = 'settings.manage'
+}
+
+export const ROLE_PERMISSIONS: Record<UserRole, Permission[]> = {
+  [UserRole.SUPER_ADMIN]: Object.values(Permission),
+  [UserRole.SYSTEM_ADMIN]: Object.values(Permission),
+
+  [UserRole.ADMIN]: [
+    Permission.USER_VIEW,
+    Permission.USER_CREATE,
+    Permission.USER_UPDATE,
+    Permission.INSTITUTION_VIEW,
+    Permission.INSTITUTION_MANAGE,
+    Permission.DEPARTMENT_VIEW,
+    Permission.APPLICATION_VIEW,
+    Permission.APPLICATION_ASSIGN,
+    Permission.APPLICATION_REVIEW,
+    Permission.APPLICATION_APPROVE,
+    Permission.DOCUMENT_VIEW,
+    Permission.DOCUMENT_VERIFY,
+    Permission.COMPLIANCE_VIEW,
+    Permission.COMPLIANCE_MANAGE,
+    Permission.TASK_VIEW,
+    Permission.TASK_MANAGE,
+    Permission.TASK_ASSIGN,
+    Permission.REPORTS_VIEW,
+    Permission.REPORTS_EXPORT,
+    Permission.AUDIT_VIEW
+  ],
+  [UserRole.BUREAU_OFFICER]: [
+    Permission.USER_VIEW,
+    Permission.INSTITUTION_VIEW,
+    Permission.INSTITUTION_MANAGE,
+    Permission.DEPARTMENT_VIEW,
+    Permission.APPLICATION_VIEW,
+    Permission.APPLICATION_ASSIGN,
+    Permission.APPLICATION_REVIEW,
+    Permission.APPLICATION_APPROVE,
+    Permission.DOCUMENT_VIEW,
+    Permission.DOCUMENT_VERIFY,
+    Permission.COMPLIANCE_VIEW,
+    Permission.COMPLIANCE_MANAGE,
+    Permission.TASK_VIEW,
+    Permission.TASK_MANAGE,
+    Permission.TASK_ASSIGN,
+    Permission.REPORTS_VIEW,
+    Permission.REPORTS_EXPORT,
+    Permission.AUDIT_VIEW
+  ],
+
+  [UserRole.DEPARTMENT_OFFICER]: [
+    Permission.USER_VIEW,
+    Permission.INSTITUTION_VIEW,
+    Permission.DEPARTMENT_VIEW,
+    Permission.APPLICATION_VIEW,
+    Permission.APPLICATION_REVIEW,
+    Permission.DOCUMENT_VIEW,
+    Permission.DOCUMENT_VERIFY,
+    Permission.COMPLIANCE_VIEW,
+    Permission.TASK_VIEW,
+    Permission.TASK_MANAGE,
+    Permission.REPORTS_VIEW,
+    Permission.AUDIT_VIEW
+  ],
+  [UserRole.REGIONAL_OFFICER]: [
+    Permission.USER_VIEW,
+    Permission.INSTITUTION_VIEW,
+    Permission.DEPARTMENT_VIEW,
+    Permission.APPLICATION_VIEW,
+    Permission.APPLICATION_REVIEW,
+    Permission.DOCUMENT_VIEW,
+    Permission.DOCUMENT_VERIFY,
+    Permission.COMPLIANCE_VIEW,
+    Permission.TASK_VIEW,
+    Permission.TASK_MANAGE,
+    Permission.REPORTS_VIEW,
+    Permission.AUDIT_VIEW
+  ],
+
+  [UserRole.EVALUATOR]: [
+    Permission.APPLICATION_VIEW,
+    Permission.APPLICATION_REVIEW,
+    Permission.DOCUMENT_VIEW,
+    Permission.DOCUMENT_VERIFY,
+    Permission.COMPLIANCE_VIEW,
+    Permission.TASK_VIEW,
+    Permission.TASK_MANAGE
+  ],
+  [UserRole.COMMITTEE_MEMBER]: [
+    Permission.APPLICATION_VIEW,
+    Permission.APPLICATION_REVIEW,
+    Permission.DOCUMENT_VIEW,
+    Permission.DOCUMENT_VERIFY,
+    Permission.COMPLIANCE_VIEW,
+    Permission.TASK_VIEW,
+    Permission.TASK_MANAGE
+  ],
+
+  [UserRole.FRESHER]: [
+    Permission.APPLICATION_VIEW,
+    Permission.DOCUMENT_VIEW,
+    Permission.TASK_VIEW,
+    Permission.TASK_MANAGE
+  ],
+
+  [UserRole.VIEWER]: [
+    Permission.APPLICATION_VIEW,
+    Permission.DOCUMENT_VIEW,
+    Permission.REPORTS_VIEW
+  ],
+
+  [UserRole.INSTITUTION_USER]: [
+    Permission.APPLICATION_VIEW,
+    Permission.APPLICATION_CREATE,
+    Permission.APPLICATION_UPDATE,
+    Permission.DOCUMENT_VIEW,
+    Permission.DOCUMENT_UPLOAD,
+    Permission.COMPLIANCE_VIEW,
+    Permission.COMPLIANCE_MANAGE
+  ]
+};
+
+export function hasPermission(role: UserRole | string, permission: Permission): boolean {
+  const perms = ROLE_PERMISSIONS[role as UserRole];
+  if (!perms) return false;
+  return perms.includes(permission);
+}
+
+export function getCanonicalRole(role: UserRole | string): UserRole {
+  switch (role) {
+    case 'SYSTEM_ADMIN':
+      return UserRole.SUPER_ADMIN;
+    case 'BUREAU_OFFICER':
+      return UserRole.ADMIN;
+    case 'REGIONAL_OFFICER':
+      return UserRole.DEPARTMENT_OFFICER;
+    case 'COMMITTEE_MEMBER':
+      return UserRole.EVALUATOR;
+    default:
+      return role as UserRole;
+  }
 }
 
 export enum Region {

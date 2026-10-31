@@ -64,3 +64,4 @@ SIH_NEXUS/
 | Emitted Build Artifacts | `composite: true` was emitting `vite.config.js` into root | Set `noEmit: true` and added `*.tsbuildinfo` to `.gitignore` |
 | Module Resolution Consistency | Mixed CommonJS / Bundler resolution across workspaces | Preserved CommonJS for backend & Node services; unified Bundler for Vite client |
 | Circular Dependencies | Evaluated import chains across shared package | 0 circular dependencies detected |
+

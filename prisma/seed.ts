@@ -8,6 +8,7 @@ async function main() {
   console.log('--- Starting RegulaFlow AI Database Seeding ---');
 
   // Clear existing records in proper dependency order
+  await prisma.userTask.deleteMany({});
   await prisma.auditEvent.deleteMany({});
   await prisma.escalationEvent.deleteMany({});
   await prisma.notification.deleteMany({});
@@ -20,6 +21,7 @@ async function main() {
   await prisma.application.deleteMany({});
   await prisma.regulatoryReference.deleteMany({});
   await prisma.user.deleteMany({});
+  await prisma.department.deleteMany({});
   await prisma.institution.deleteMany({});
 
   const passwordHash = await bcrypt.hash('Password@123', 10);
@@ -91,13 +93,128 @@ async function main() {
 
   console.log('✓ Created 4 Institutions');
 
+  // 1b. Create Enterprise Departments
+  const deptScrutiny = await prisma.department.create({
+    data: {
+      name: 'Approval & Regulatory Scrutiny',
+      code: 'DEPT_SCRUTINY',
+      description: 'Document evidence analysis, intake calculation, land deeds verification',
+    },
+  });
+
+  const deptLegal = await prisma.department.create({
+    data: {
+      name: 'Legal, Land & Compliance Oversight',
+      code: 'DEPT_LEGAL',
+      description: 'Lease covenants, land title deeds, court disputes, and statutory NOC tracking',
+    },
+  });
+
+  const deptEvc = await prisma.department.create({
+    data: {
+      name: 'Expert Visiting & Inspection Committees',
+      code: 'DEPT_EVC',
+      description: 'Physical & virtual campus verification, infrastructure scoring, lab audits',
+    },
+  });
+
+  const deptQuality = await prisma.department.create({
+    data: {
+      name: 'Accreditation & Standards Evaluation',
+      code: 'DEPT_QUALITY',
+      description: 'Faculty-student ratios, NBA accreditation, trainee learning & quality assurance',
+    },
+  });
+
+  console.log('✓ Created 4 Enterprise Departments');
+
   // 2. Create Users across all roles
+  // --- Enterprise Roles ---
+  const superAdmin = await prisma.user.create({
+    data: {
+      email: 'superadmin@supernexus.ai',
+      passwordHash,
+      fullName: 'Aarav Singhania (Super Admin)',
+      role: 'SUPER_ADMIN',
+      designation: 'Chief Regulatory Systems Architect',
+      phone: '+91 98000 11111',
+      region: 'NORTHERN',
+      departmentId: deptScrutiny.id,
+    },
+  });
+
+  const enterpriseAdmin = await prisma.user.create({
+    data: {
+      email: 'admin@supernexus.ai',
+      passwordHash,
+      fullName: 'Meera Nambiar (Admin)',
+      role: 'ADMIN',
+      designation: 'Director of Operational Compliance',
+      phone: '+91 98000 22222',
+      region: 'NORTHERN',
+      departmentId: deptScrutiny.id,
+    },
+  });
+
+  const deptOfficer = await prisma.user.create({
+    data: {
+      email: 'officer.dept@supernexus.ai',
+      passwordHash,
+      fullName: 'Rajeshwer Sen (HR / Dept Officer)',
+      role: 'DEPARTMENT_OFFICER',
+      designation: 'Lead Scrutiny Officer (Engineering)',
+      phone: '+91 98000 33333',
+      region: 'NORTHERN',
+      departmentId: deptScrutiny.id,
+    },
+  });
+
+  const evaluatorUser = await prisma.user.create({
+    data: {
+      email: 'evaluator@supernexus.ai',
+      passwordHash,
+      fullName: 'Dr. Priya Sundaram (Evaluator)',
+      role: 'EVALUATOR',
+      designation: 'Senior Technical Evaluator',
+      phone: '+91 98000 44444',
+      region: 'NORTHERN',
+      departmentId: deptEvc.id,
+    },
+  });
+
+  const fresherUser = await prisma.user.create({
+    data: {
+      email: 'fresher@supernexus.ai',
+      passwordHash,
+      fullName: 'Aditya Varma (Fresher)',
+      role: 'FRESHER',
+      designation: 'Junior Verification Associate',
+      phone: '+91 98000 55555',
+      region: 'NORTHERN',
+      departmentId: deptQuality.id,
+    },
+  });
+
+  const viewerUser = await prisma.user.create({
+    data: {
+      email: 'viewer@supernexus.ai',
+      passwordHash,
+      fullName: 'Kavita Joshi (Viewer)',
+      role: 'VIEWER',
+      designation: 'Statutory Observer & Auditor',
+      phone: '+91 98000 66666',
+      region: 'NORTHERN',
+    },
+  });
+
+  // --- AICTE Domain Legacy Roles (for backward compatibility & existing tests) ---
   const instUser = await prisma.user.create({
     data: {
       email: 'institution@regulaflow.aicte.gov.in',
       passwordHash,
       fullName: 'Dr. Ramesh Sharma (Principal)',
       role: 'INSTITUTION_USER',
+      designation: 'Institution Head / Principal',
       phone: '+91 98101 23456',
       region: 'NORTHERN',
       institutionId: apexInst.id,
@@ -110,8 +227,10 @@ async function main() {
       passwordHash,
       fullName: 'Shri Vikram Malhotra (Regional Officer)',
       role: 'REGIONAL_OFFICER',
+      designation: 'Regional Director (North)',
       phone: '+91 98202 34567',
       region: 'NORTHERN',
+      departmentId: deptScrutiny.id,
     },
   });
 
@@ -121,8 +240,10 @@ async function main() {
       passwordHash,
       fullName: 'Dr. Ananya Sen (Bureau Chief - Approval)',
       role: 'BUREAU_OFFICER',
+      designation: 'Bureau Chief (Approval Bureau)',
       phone: '+91 98303 45678',
       region: 'NORTHERN',
+      departmentId: deptScrutiny.id,
     },
   });
 
@@ -132,8 +253,10 @@ async function main() {
       passwordHash,
       fullName: 'Prof. K. Venkatesh (EVC Chairman)',
       role: 'COMMITTEE_MEMBER',
+      designation: 'EVC Committee Chairman',
       phone: '+91 98404 56789',
       region: 'NORTHERN',
+      departmentId: deptEvc.id,
     },
   });
 
@@ -143,11 +266,13 @@ async function main() {
       passwordHash,
       fullName: 'System Administrator (AICTE HQ)',
       role: 'SYSTEM_ADMIN',
+      designation: 'Lead Infrastructure Administrator',
       phone: '+91 98505 67890',
+      departmentId: deptScrutiny.id,
     },
   });
 
-  console.log('✓ Created 5 Role-based Demo Users');
+  console.log('✓ Created 11 Enterprise & Domain Demo Users across all roles');
 
   // 3. Create Applications across different stages
   // App 1: Extension of Approval - UNDER_SCRUTINY
@@ -689,6 +814,122 @@ async function main() {
   });
 
   console.log('✓ Created 3 Regulatory Reference Documents with RAG chunks');
+
+  // 11b. Create Enterprise Tasks & Learning Assignments
+  await prisma.userTask.createMany({
+    data: [
+      // Evaluator Tasks
+      {
+        title: 'Inspect Land Deed & Survey Boundaries',
+        description: 'Cross-check OCR extracted survey numbers and carpet area against Chapter 4 norms.',
+        type: 'VERIFICATION',
+        status: 'IN_PROGRESS',
+        priority: 'HIGH',
+        progress: 60,
+        dueDate: new Date(Date.now() + 86400000 * 3),
+        assignedToId: evaluatorUser.id,
+        assignedById: deptOfficer.id,
+        applicationId: app1.id,
+      },
+      {
+        title: 'Evaluate Cadre Ratio & Faculty Pay Slips',
+        description: 'Verify 1:15 or 1:20 SFR ratios and professor-to-assistant-professor cadre distribution.',
+        type: 'EVALUATION',
+        status: 'PENDING',
+        priority: 'NORMAL',
+        progress: 0,
+        dueDate: new Date(Date.now() + 86400000 * 5),
+        assignedToId: evaluatorUser.id,
+        assignedById: enterpriseAdmin.id,
+        applicationId: app1.id,
+      },
+      {
+        title: 'Audit Fire Safety NOC & Emergency Evacuation Plan',
+        description: 'Verify validity period from State Fire Advisory Authority and emergency egress maps.',
+        type: 'COMPLIANCE',
+        status: 'COMPLETED',
+        priority: 'URGENT',
+        progress: 100,
+        dueDate: new Date(Date.now() - 86400000 * 1),
+        assignedToId: evaluatorUser.id,
+        assignedById: deptOfficer.id,
+        applicationId: app2.id,
+      },
+      // Fresher Tasks (Learning & Supervised Verification)
+      {
+        title: 'Orientation: Approval Process Handbook Norms (Ch. 1-3)',
+        description: 'Study essential land requirements, administrative and instructional area mandates.',
+        type: 'LEARNING',
+        status: 'COMPLETED',
+        priority: 'NORMAL',
+        progress: 100,
+        dueDate: new Date(Date.now() - 86400000 * 2),
+        assignedToId: fresherUser.id,
+        assignedById: enterpriseAdmin.id,
+      },
+      {
+        title: 'Supervised Verification: Building Plan Sanction Checklist',
+        description: 'Conduct guided check of architect-certified floor plan layouts under senior evaluator review.',
+        type: 'VERIFICATION',
+        status: 'IN_PROGRESS',
+        priority: 'HIGH',
+        progress: 45,
+        dueDate: new Date(Date.now() + 86400000 * 2),
+        assignedToId: fresherUser.id,
+        assignedById: deptOfficer.id,
+        applicationId: app1.id,
+      },
+      {
+        title: 'Module: OCR Entity Extraction & Evidence Tagging',
+        description: 'Practice identifying lease tenure clauses, notarized dates, and lessor metadata in Tesseract stream.',
+        type: 'LEARNING',
+        status: 'IN_PROGRESS',
+        priority: 'NORMAL',
+        progress: 70,
+        dueDate: new Date(Date.now() + 86400000 * 4),
+        assignedToId: fresherUser.id,
+        assignedById: enterpriseAdmin.id,
+      },
+      {
+        title: 'Self-Study: Anti-Ragging Undertaking Legal Standards',
+        description: 'Review statutory Supreme Court directives on student anti-ragging affidavits.',
+        type: 'LEARNING',
+        status: 'PENDING',
+        priority: 'LOW',
+        progress: 0,
+        dueDate: new Date(Date.now() + 86400000 * 7),
+        assignedToId: fresherUser.id,
+        assignedById: deptOfficer.id,
+      },
+      // Department Officer Tasks
+      {
+        title: 'Scrutinize EoA Application Batch North-2026',
+        description: 'Comprehensive review of pending applications awaiting scrutiny sign-off.',
+        type: 'SCRUTINY',
+        status: 'IN_PROGRESS',
+        priority: 'HIGH',
+        progress: 75,
+        dueDate: new Date(Date.now() + 86400000 * 2),
+        assignedToId: deptOfficer.id,
+        assignedById: enterpriseAdmin.id,
+        applicationId: app1.id,
+      },
+      {
+        title: 'Review Deficiency Rectifications - Bharat Institute',
+        description: 'Check re-uploaded Fire Safety NOC after 30-day cure period warning.',
+        type: 'SCRUTINY',
+        status: 'PENDING',
+        priority: 'URGENT',
+        progress: 10,
+        dueDate: new Date(Date.now() + 86400000 * 1),
+        assignedToId: deptOfficer.id,
+        assignedById: superAdmin.id,
+        applicationId: app2.id,
+      },
+    ],
+  });
+
+  console.log('✓ Created 9 Enterprise Tasks across Evaluator, Fresher & Department Officer');
 
   // 12. Create Baseline Audit Trail
   await prisma.auditEvent.createMany({

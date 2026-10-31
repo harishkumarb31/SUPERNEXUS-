@@ -19,6 +19,7 @@ import { reportRouter } from './modules/reports/reportRoutes';
 import { auditRouter } from './modules/audit/auditRoutes';
 import { assistantRouter } from './modules/assistant/assistantRoutes';
 import { adminRouter } from './modules/admin/adminRoutes';
+import { taskRouter } from './modules/tasks/taskRoutes';
 
 export const app = express();
 
@@ -57,6 +58,7 @@ app.use('/api/v1/reports', reportRouter);
 app.use('/api/v1/audit', auditRouter);
 app.use('/api/v1/assistant', assistantRouter);
 app.use('/api/v1/admin', adminRouter);
+app.use('/api/v1/tasks', taskRouter);
 
 // Centralized Error Handler
 app.use(errorHandler);

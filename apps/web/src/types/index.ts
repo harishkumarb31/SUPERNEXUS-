@@ -1,4 +1,13 @@
 export enum UserRole {
+  // Enterprise Multi-Role Hierarchy
+  SUPER_ADMIN = 'SUPER_ADMIN',
+  ADMIN = 'ADMIN',
+  DEPARTMENT_OFFICER = 'DEPARTMENT_OFFICER',
+  EVALUATOR = 'EVALUATOR',
+  FRESHER = 'FRESHER',
+  VIEWER = 'VIEWER',
+
+  // Domain Roles (Interoperable)
   INSTITUTION_USER = 'INSTITUTION_USER',
   REGIONAL_OFFICER = 'REGIONAL_OFFICER',
   BUREAU_OFFICER = 'BUREAU_OFFICER',
@@ -28,15 +37,82 @@ export enum ComplianceStatus {
   COMPLETED = 'COMPLETED',
 }
 
+export enum Permission {
+  USER_VIEW = 'user.view',
+  USER_CREATE = 'user.create',
+  USER_UPDATE = 'user.update',
+  USER_DELETE = 'user.delete',
+  ROLE_MANAGE = 'role.manage',
+  INSTITUTION_VIEW = 'institution.view',
+  INSTITUTION_MANAGE = 'institution.manage',
+  DEPARTMENT_VIEW = 'department.view',
+  DEPARTMENT_MANAGE = 'department.manage',
+  APPLICATION_VIEW = 'application.view',
+  APPLICATION_CREATE = 'application.create',
+  APPLICATION_UPDATE = 'application.update',
+  APPLICATION_ASSIGN = 'application.assign',
+  APPLICATION_REVIEW = 'application.review',
+  APPLICATION_APPROVE = 'application.approve',
+  DOCUMENT_VIEW = 'document.view',
+  DOCUMENT_UPLOAD = 'document.upload',
+  DOCUMENT_VERIFY = 'document.verify',
+  COMPLIANCE_VIEW = 'compliance.view',
+  COMPLIANCE_MANAGE = 'compliance.manage',
+  TASK_VIEW = 'task.view',
+  TASK_MANAGE = 'task.manage',
+  TASK_ASSIGN = 'task.assign',
+  REPORTS_VIEW = 'reports.view',
+  REPORTS_EXPORT = 'reports.export',
+  AUDIT_VIEW = 'audit.view',
+  SETTINGS_MANAGE = 'settings.manage',
+}
+
 export interface UserSummary {
   id: string;
   email: string;
   fullName: string;
   role: UserRole;
+  designation?: string | null;
   region?: string | null;
+  departmentId?: string | null;
+  departmentName?: string | null;
   institutionId?: string | null;
   institutionName?: string | null;
   institutionCode?: string | null;
+  permissions?: Permission[];
+}
+
+export interface Department {
+  id: string;
+  name: string;
+  code: string;
+  description?: string | null;
+  _count?: { users: number };
+  users?: Array<{ id: string; fullName: string; role: string; designation?: string | null }>;
+}
+
+export interface UserTask {
+  id: string;
+  title: string;
+  description?: string | null;
+  type: 'SCRUTINY' | 'VERIFICATION' | 'LEARNING' | 'EVALUATION' | 'COMPLIANCE';
+  status: 'PENDING' | 'IN_PROGRESS' | 'COMPLETED';
+  priority: 'LOW' | 'NORMAL' | 'HIGH' | 'URGENT';
+  progress: number;
+  dueDate?: string | null;
+  assignedToId: string;
+  assignedTo?: { id: string; fullName: string; email: string; role: string; designation?: string | null };
+  assignedById?: string | null;
+  assignedBy?: { id: string; fullName: string; email: string };
+  applicationId?: string | null;
+  application?: {
+    id: string;
+    applicationNumber: string;
+    currentStage: string;
+    institution?: { name: string; code: string };
+  };
+  createdAt: string;
+  updatedAt: string;
 }
 
 export interface Institution {

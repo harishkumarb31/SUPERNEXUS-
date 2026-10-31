@@ -210,6 +210,25 @@ export const assistantService = {
   },
 };
 
+export const taskService = {
+  list: async (params?: any) => {
+    const res = await api.get('/tasks', { params });
+    return res.data.data;
+  },
+  getStats: async () => {
+    const res = await api.get('/tasks/stats');
+    return res.data.data;
+  },
+  create: async (data: any) => {
+    const res = await api.post('/tasks', data);
+    return res.data.data;
+  },
+  update: async (id: string, data: any) => {
+    const res = await api.put(`/tasks/${id}`, data);
+    return res.data.data;
+  },
+};
+
 export const adminService = {
   listUsers: async () => {
     const res = await api.get('/admin/users');
@@ -217,6 +236,18 @@ export const adminService = {
   },
   listInstitutions: async () => {
     const res = await api.get('/admin/institutions');
+    return res.data.data;
+  },
+  listDepartments: async () => {
+    const res = await api.get('/admin/departments');
+    return res.data.data;
+  },
+  getRolesAndPermissions: async () => {
+    const res = await api.get('/admin/roles-permissions');
+    return res.data.data;
+  },
+  getSecurityStats: async () => {
+    const res = await api.get('/admin/security-stats');
     return res.data.data;
   },
   getSystemHealth: async () => {

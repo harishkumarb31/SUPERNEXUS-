@@ -3,7 +3,7 @@ import jwt from 'jsonwebtoken';
 import { config } from '../config';
 import { prisma } from '../services/db';
 import { AppError } from './errorHandler';
-import { UserRole } from '@regulaflow/shared';
+import { UserRole, Permission, hasPermission } from '@regulaflow/shared';
 
 export interface AuthenticatedUser {
   id: string;
@@ -12,6 +12,9 @@ export interface AuthenticatedUser {
   role: UserRole;
   region?: string | null;
   institutionId?: string | null;
+  departmentId?: string | null;
+  departmentName?: string | null;
+  designation?: string | null;
 }
 
 declare global {
@@ -41,7 +44,7 @@ export async function authenticate(req: Request, res: Response, next: NextFuncti
     const decoded = jwt.verify(token, config.jwtSecret) as any;
     const user = await prisma.user.findUnique({
       where: { id: decoded.id },
-      include: { institution: true },
+      include: { institution: true, department: true },
     });
 
     if (!user || !user.active) {
@@ -55,6 +58,9 @@ export async function authenticate(req: Request, res: Response, next: NextFuncti
       role: user.role as UserRole,
       region: user.region,
       institutionId: user.institutionId,
+      departmentId: user.departmentId,
+      departmentName: user.department?.name || null,
+      designation: user.designation,
     };
 
     next();
@@ -67,16 +73,60 @@ export async function authenticate(req: Request, res: Response, next: NextFuncti
   }
 }
 
+// Maps roles to all equivalent compatible roles in the hierarchy
+const ROLE_ALIASES: Record<string, string[]> = {
+  SUPER_ADMIN: ['SUPER_ADMIN', 'SYSTEM_ADMIN'],
+  SYSTEM_ADMIN: ['SUPER_ADMIN', 'SYSTEM_ADMIN'],
+  ADMIN: ['ADMIN', 'BUREAU_OFFICER', 'SUPER_ADMIN', 'SYSTEM_ADMIN'],
+  BUREAU_OFFICER: ['ADMIN', 'BUREAU_OFFICER', 'SUPER_ADMIN', 'SYSTEM_ADMIN'],
+  DEPARTMENT_OFFICER: ['DEPARTMENT_OFFICER', 'REGIONAL_OFFICER'],
+  REGIONAL_OFFICER: ['DEPARTMENT_OFFICER', 'REGIONAL_OFFICER'],
+  EVALUATOR: ['EVALUATOR', 'COMMITTEE_MEMBER'],
+  COMMITTEE_MEMBER: ['EVALUATOR', 'COMMITTEE_MEMBER'],
+  FRESHER: ['FRESHER'],
+  VIEWER: ['VIEWER'],
+  INSTITUTION_USER: ['INSTITUTION_USER'],
+};
+
 export function requireRole(...roles: UserRole[]) {
   return (req: Request, res: Response, next: NextFunction) => {
     if (!req.user) {
       return next(new AppError('Unauthorized: User not authenticated.', 401));
     }
 
-    if (!roles.includes(req.user.role)) {
+    const userRoleStr = String(req.user.role);
+    const userAliases = ROLE_ALIASES[userRoleStr] || [userRoleStr];
+
+    const hasMatch = roles.some((r) => {
+      const targetStr = String(r);
+      const targetAliases = ROLE_ALIASES[targetStr] || [targetStr];
+      return userAliases.some((alias) => targetAliases.includes(alias));
+    });
+
+    if (!hasMatch) {
       return next(
         new AppError(
           `Forbidden: Role '${req.user.role}' is not authorized to perform this action. Required: [${roles.join(', ')}]`,
+          403
+        )
+      );
+    }
+
+    next();
+  };
+}
+
+export function requirePermission(...permissions: Permission[]) {
+  return (req: Request, res: Response, next: NextFunction) => {
+    if (!req.user) {
+      return next(new AppError('Unauthorized: User not authenticated.', 401));
+    }
+
+    const hasAll = permissions.every((p) => hasPermission(req.user!.role, p));
+    if (!hasAll) {
+      return next(
+        new AppError(
+          `Forbidden: Role '${req.user.role}' lacks required permissions: [${permissions.join(', ')}]`,
           403
         )
       );

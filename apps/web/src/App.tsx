@@ -16,6 +16,10 @@ import { AssistantPage } from './pages/AssistantPage';
 import { ReportsPage } from './pages/ReportsPage';
 import { AuditPage } from './pages/AuditPage';
 import { AdminPage } from './pages/AdminPage';
+import { TasksPage } from './pages/TasksPage';
+import { LearningWorkspacePage } from './pages/LearningWorkspacePage';
+import { ProfilePage } from './pages/ProfilePage';
+import { NotificationsPage } from './pages/NotificationsPage';
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -71,6 +75,10 @@ export const App: React.FC = () => {
               <Route path="reports" element={<ReportsPage />} />
               <Route path="audit" element={<AuditPage />} />
               <Route path="admin" element={<AdminPage />} />
+              <Route path="tasks" element={<TasksPage />} />
+              <Route path="learning" element={<LearningWorkspacePage />} />
+              <Route path="profile" element={<ProfilePage />} />
+              <Route path="notifications" element={<NotificationsPage />} />
             </Route>
 
             <Route path="*" element={<Navigate to="/dashboard" replace />} />

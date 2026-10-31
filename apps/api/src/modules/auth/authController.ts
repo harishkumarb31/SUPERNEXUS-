@@ -6,6 +6,7 @@ import { prisma } from '../../services/db';
 import { config } from '../../config';
 import { AppError } from '../../middleware/errorHandler';
 import { logAuditEvent } from '../../middleware/audit';
+import { ROLE_PERMISSIONS, UserRole } from '@regulaflow/shared';
 
 const bcrypt = (bcryptjs as any).default || bcryptjs;
 
@@ -16,6 +17,12 @@ const loginSchema = z.object({
 
 const demoLoginSchema = z.object({
   role: z.enum([
+    'SUPER_ADMIN',
+    'ADMIN',
+    'DEPARTMENT_OFFICER',
+    'EVALUATOR',
+    'FRESHER',
+    'VIEWER',
     'INSTITUTION_USER',
     'REGIONAL_OFFICER',
     'BUREAU_OFFICER',
@@ -31,7 +38,7 @@ export class AuthController {
 
       const user = await prisma.user.findUnique({
         where: { email },
-        include: { institution: true },
+        include: { institution: true, department: true },
       });
 
       if (!user || !user.active) {
@@ -70,10 +77,14 @@ export class AuthController {
             email: user.email,
             fullName: user.fullName,
             role: user.role,
+            designation: user.designation || null,
             region: user.region,
+            departmentId: user.departmentId || null,
+            departmentName: user.department?.name || null,
             institutionId: user.institutionId,
             institutionName: user.institution?.name || null,
             institutionCode: user.institution?.code || null,
+            permissions: ROLE_PERMISSIONS[user.role as UserRole] || [],
           },
         },
       });
@@ -88,7 +99,7 @@ export class AuthController {
 
       const user = await prisma.user.findFirst({
         where: { role, active: true },
-        include: { institution: true },
+        include: { institution: true, department: true },
       });
 
       if (!user) {
@@ -122,10 +133,14 @@ export class AuthController {
             email: user.email,
             fullName: user.fullName,
             role: user.role,
+            designation: user.designation || null,
             region: user.region,
+            departmentId: user.departmentId || null,
+            departmentName: user.department?.name || null,
             institutionId: user.institutionId,
             institutionName: user.institution?.name || null,
             institutionCode: user.institution?.code || null,
+            permissions: ROLE_PERMISSIONS[user.role as UserRole] || [],
           },
         },
       });
@@ -142,7 +157,7 @@ export class AuthController {
 
       const user = await prisma.user.findUnique({
         where: { id: req.user.id },
-        include: { institution: true },
+        include: { institution: true, department: true },
       });
 
       if (!user) {
@@ -157,10 +172,14 @@ export class AuthController {
             email: user.email,
             fullName: user.fullName,
             role: user.role,
+            designation: user.designation || null,
             region: user.region,
+            departmentId: user.departmentId || null,
+            departmentName: user.department?.name || null,
             institutionId: user.institutionId,
             institutionName: user.institution?.name || null,
             institutionCode: user.institution?.code || null,
+            permissions: ROLE_PERMISSIONS[user.role as UserRole] || [],
           },
         },
       });
