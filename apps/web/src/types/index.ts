@@ -56,6 +56,11 @@ export enum Permission {
   DOCUMENT_VIEW = 'document.view',
   DOCUMENT_UPLOAD = 'document.upload',
   DOCUMENT_VERIFY = 'document.verify',
+  DOCUMENT_REJECT = 'document.reject',
+  DOCUMENT_DELETE = 'document.delete',
+  DOCUMENT_REQUEST = 'document.request',
+  DOCUMENT_REQUEST_MANAGE = 'document.request.manage',
+  DOCUMENT_CATEGORY_MANAGE = 'document.category.manage',
   COMPLIANCE_VIEW = 'compliance.view',
   COMPLIANCE_MANAGE = 'compliance.manage',
   TASK_VIEW = 'task.view',
@@ -130,10 +135,53 @@ export interface Institution {
   establishedYear: number;
 }
 
+export interface DocumentCategory {
+  id: string;
+  name: string;
+  code: string;
+  description?: string | null;
+  isDefault?: boolean;
+  _count?: { documents: number; requests: number };
+}
+
+export interface DocumentVerification {
+  id: string;
+  documentId: string;
+  verifierId: string;
+  verifier?: { id: string; fullName: string; email: string; role: string };
+  status: string;
+  comments?: string | null;
+  rejectionReason?: string | null;
+  createdAt: string;
+}
+
+export interface DocumentVersion {
+  id: string;
+  documentId: string;
+  versionNumber: number;
+  fileName: string;
+  originalName: string;
+  filePath: string;
+  fileSize: number;
+  checksumSha256: string;
+  uploadedById?: string | null;
+  uploadedBy?: { id: string; fullName: string };
+  changeSummary?: string | null;
+  createdAt: string;
+}
+
 export interface ApplicationDocument {
   id: string;
-  applicationId: string;
+  applicationId?: string | null;
+  application?: {
+    id: string;
+    applicationNumber: string;
+    currentStage: string;
+    institution?: { name: string; code: string };
+  } | null;
   documentType: string;
+  title?: string | null;
+  description?: string | null;
   fileName: string;
   originalName: string;
   mimeType: string;
@@ -143,8 +191,24 @@ export interface ApplicationDocument {
   version: number;
   uploadDate: string;
   expiryDate?: string | null;
-  status: string;
+  status: string; // UPLOADED, PENDING_VERIFICATION, UNDER_REVIEW, VERIFIED, REJECTED, REQUIRES_RESUBMISSION, PENDING_OCR, OCR_COMPLETED, FLAGGED
+  rejectionReason?: string | null;
   verifiedBy?: string | null;
+  verifiedAt?: string | null;
+  categoryId?: string | null;
+  category?: DocumentCategory | null;
+  departmentId?: string | null;
+  department?: Department | null;
+  uploaderId?: string | null;
+  uploader?: { id: string; fullName: string; email: string; role?: string } | null;
+  institutionId?: string | null;
+  institution?: { id: string; name: string; code: string } | null;
+  taskId?: string | null;
+  task?: { id: string; title: string; status: string } | null;
+  isRestricted?: boolean;
+  verifications?: DocumentVerification[];
+  versions?: DocumentVersion[];
+  fulfilledRequests?: DocumentRequest[];
   extractions?: Array<{
     id: string;
     rawText: string;
@@ -153,6 +217,72 @@ export interface ApplicationDocument {
     ocrEngine: string;
     processedAt: string;
   }>;
+}
+
+export interface DocumentRequest {
+  id: string;
+  requestNumber: string;
+  title: string;
+  categoryId?: string | null;
+  category?: DocumentCategory | null;
+  categoryName?: string | null;
+  description?: string | null;
+  reason: string;
+  priority: 'LOW' | 'NORMAL' | 'HIGH' | 'URGENT';
+  requiredByDate?: string | null;
+  status:
+    | 'SUBMITTED'
+    | 'PENDING_ASSIGNMENT'
+    | 'ASSIGNED'
+    | 'IN_PROGRESS'
+    | 'DOCUMENT_UPLOADED'
+    | 'AVAILABLE_FOR_EMPLOYEE'
+    | 'REJECTED'
+    | 'CLOSED';
+  requesterId: string;
+  requester?: {
+    id: string;
+    fullName: string;
+    email: string;
+    role: string;
+    designation?: string | null;
+  };
+  assignedToId?: string | null;
+  assignedTo?: {
+    id: string;
+    fullName: string;
+    email: string;
+    role: string;
+    designation?: string | null;
+  } | null;
+  departmentId?: string | null;
+  department?: Department | null;
+  applicationId?: string | null;
+  application?: {
+    id: string;
+    applicationNumber: string;
+    institution?: { name: string; code: string };
+  } | null;
+  taskId?: string | null;
+  task?: { id: string; title: string; status: string } | null;
+  fulfilledDocumentId?: string | null;
+  fulfilledDocument?: ApplicationDocument | null;
+  rejectionReason?: string | null;
+  clarificationNotes?: string | null;
+  assignments?: DocumentRequestAssignment[];
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface DocumentRequestAssignment {
+  id: string;
+  requestId: string;
+  assignedById?: string | null;
+  assignedBy?: { id: string; fullName: string; email: string } | null;
+  assignedToId: string;
+  assignedTo: { id: string; fullName: string; email: string };
+  notes?: string | null;
+  timestamp: string;
 }
 
 export interface ValidationFinding {

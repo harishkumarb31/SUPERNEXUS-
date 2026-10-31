@@ -83,16 +83,41 @@ export const applicationService = {
 };
 
 export const documentService = {
+  list: async (params?: any) => {
+    const res = await api.get('/documents', { params });
+    return res.data.data;
+  },
+  getById: async (id: string) => {
+    const res = await api.get(`/documents/${id}`);
+    return res.data.data;
+  },
   upload: async (formData: FormData) => {
     const res = await api.post('/documents/upload', formData, {
       headers: { 'Content-Type': 'multipart/form-data' },
     });
     return res.data.data;
   },
+  verify: async (id: string, payload: { status: string; comments?: string; rejectionReason?: string }) => {
+    const res = await api.post(`/documents/${id}/verify`, payload);
+    return res.data.data;
+  },
   downloadUrl: (id: string) => `/api/v1/documents/${id}/download`,
+  previewUrl: (id: string) => `/api/v1/documents/${id}/preview`,
   deleteDocument: async (id: string) => {
     const res = await api.delete(`/documents/${id}`);
     return res.data;
+  },
+  listCategories: async () => {
+    const res = await api.get('/documents/categories/list');
+    return res.data.data;
+  },
+  createCategory: async (payload: { name: string; code?: string; description?: string }) => {
+    const res = await api.post('/documents/categories', payload);
+    return res.data.data;
+  },
+  getStats: async () => {
+    const res = await api.get('/documents/stats/overview');
+    return res.data.data;
   },
   triggerOcr: async (documentId: string) => {
     const res = await api.post('/ocr/process', { documentId });
@@ -100,6 +125,47 @@ export const documentService = {
   },
   updateFields: async (documentId: string, fields: any, reason?: string) => {
     const res = await api.put(`/ocr/${documentId}/fields`, { fields, reason });
+    return res.data.data;
+  },
+};
+
+export const documentRequestService = {
+  list: async (params?: any) => {
+    const res = await api.get('/document-requests', { params });
+    return res.data.data;
+  },
+  getById: async (id: string) => {
+    const res = await api.get(`/document-requests/${id}`);
+    return res.data.data;
+  },
+  create: async (payload: {
+    title: string;
+    categoryId?: string;
+    categoryName?: string;
+    description?: string;
+    reason: string;
+    priority?: string;
+    requiredByDate?: string;
+    applicationId?: string;
+    taskId?: string;
+    departmentId?: string;
+  }) => {
+    const res = await api.post('/document-requests', payload);
+    return res.data.data;
+  },
+  assign: async (id: string, payload: { assignedToId: string; notes?: string }) => {
+    const res = await api.post(`/document-requests/${id}/assign`, payload);
+    return res.data.data;
+  },
+  updateStatus: async (
+    id: string,
+    payload: { status: string; rejectionReason?: string; clarificationNotes?: string }
+  ) => {
+    const res = await api.patch(`/document-requests/${id}/status`, payload);
+    return res.data.data;
+  },
+  getStats: async () => {
+    const res = await api.get('/document-requests/stats/summary');
     return res.data.data;
   },
 };

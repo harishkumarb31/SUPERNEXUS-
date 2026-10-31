@@ -20,6 +20,7 @@ import { auditRouter } from './modules/audit/auditRoutes';
 import { assistantRouter } from './modules/assistant/assistantRoutes';
 import { adminRouter } from './modules/admin/adminRoutes';
 import { taskRouter } from './modules/tasks/taskRoutes';
+import { documentRequestRouter } from './modules/documents/documentRequestRoutes';
 
 export const app = express();
 
@@ -59,6 +60,7 @@ app.use('/api/v1/audit', auditRouter);
 app.use('/api/v1/assistant', assistantRouter);
 app.use('/api/v1/admin', adminRouter);
 app.use('/api/v1/tasks', taskRouter);
+app.use('/api/v1/document-requests', documentRequestRouter);
 
 // Centralized Error Handler
 app.use(errorHandler);

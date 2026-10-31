@@ -8,6 +8,11 @@ async function main() {
   console.log('--- Starting RegulaFlow AI Database Seeding ---');
 
   // Clear existing records in proper dependency order
+  await prisma.documentAccessLog.deleteMany({});
+  await prisma.documentRequestAssignment.deleteMany({});
+  await prisma.documentRequest.deleteMany({});
+  await prisma.documentVersion.deleteMany({});
+  await prisma.documentVerification.deleteMany({});
   await prisma.userTask.deleteMany({});
   await prisma.auditEvent.deleteMany({});
   await prisma.escalationEvent.deleteMany({});
@@ -18,6 +23,7 @@ async function main() {
   await prisma.validationFinding.deleteMany({});
   await prisma.documentExtraction.deleteMany({});
   await prisma.applicationDocument.deleteMany({});
+  await prisma.documentCategory.deleteMany({});
   await prisma.application.deleteMany({});
   await prisma.regulatoryReference.deleteMany({});
   await prisma.user.deleteMany({});
@@ -127,6 +133,99 @@ async function main() {
   });
 
   console.log('✓ Created 4 Enterprise Departments');
+
+  // 1c. Create Standard Document Categories
+  const catAicte = await prisma.documentCategory.create({
+    data: {
+      name: 'AICTE Approval Documents',
+      code: 'CAT_AICTE_APPROVAL',
+      description: 'Formal letters of approval, extension orders, and AICTE council gazette notifications',
+      isDefault: true,
+    },
+  });
+
+  const catInst = await prisma.documentCategory.create({
+    data: {
+      name: 'Institution Records',
+      code: 'CAT_INSTITUTION_RECORDS',
+      description: 'Society / Trust registration deeds, MoA, bylaws, and governing body resolutions',
+      isDefault: true,
+    },
+  });
+
+  const catAccreditation = await prisma.documentCategory.create({
+    data: {
+      name: 'Accreditation Documents',
+      code: 'CAT_ACCREDITATION',
+      description: 'NBA, NAAC, NIRF certificates, self-assessment reports, and compliance scoresheets',
+      isDefault: true,
+    },
+  });
+
+  const catFaculty = await prisma.documentCategory.create({
+    data: {
+      name: 'Faculty Details',
+      code: 'CAT_FACULTY_DETAILS',
+      description: 'Faculty rosters, cadre ratios, appointment letters, payscales, and biometric rolls',
+      isDefault: true,
+    },
+  });
+
+  const catInfra = await prisma.documentCategory.create({
+    data: {
+      name: 'Infrastructure Documents',
+      code: 'CAT_INFRASTRUCTURE',
+      description: 'Architect certificates, municipal building sanctions, occupancy certificates, and floor plans',
+      isDefault: true,
+    },
+  });
+
+  const catFinancial = await prisma.documentCategory.create({
+    data: {
+      name: 'Financial Documents',
+      code: 'CAT_FINANCIAL',
+      description: 'Audited balance sheets, profit & loss statements, FDR receipts, and endowment fund records',
+      isDefault: true,
+    },
+  });
+
+  const catLease = await prisma.documentCategory.create({
+    data: {
+      name: 'Lease Documents',
+      code: 'CAT_LEASE_DOCUMENTS',
+      description: 'Registered land title deeds, long-term lease covenants, and sub-registrar certified copies',
+      isDefault: true,
+    },
+  });
+
+  const catCompliance = await prisma.documentCategory.create({
+    data: {
+      name: 'Compliance Evidence',
+      code: 'CAT_COMPLIANCE_EVIDENCE',
+      description: 'Fire Safety NOC, pollution clearance certificates, barrier-free access affidavits',
+      isDefault: true,
+    },
+  });
+
+  const catEvc = await prisma.documentCategory.create({
+    data: {
+      name: 'EVC Reports',
+      code: 'CAT_EVC_REPORTS',
+      description: 'Expert Visiting Committee on-site inspection reports, geo-tagged photos, and scoring sheets',
+      isDefault: true,
+    },
+  });
+
+  const catGeneral = await prisma.documentCategory.create({
+    data: {
+      name: 'General Supporting Documents',
+      code: 'CAT_GENERAL_SUPPORTING',
+      description: 'Statutory undertakings, legal affidavits, and miscellaneous regulatory submissions',
+      isDefault: true,
+    },
+  });
+
+  console.log('✓ Created 10 Enterprise Document Categories');
 
   // 2. Create Users across all roles
   // --- Enterprise Roles ---
@@ -391,11 +490,17 @@ async function main() {
 
   console.log('✓ Created 5 Applications across DRAFT, UNDER_SCRUTINY, DEFICIENCY_RAISED, AWAITING_EVC, APPROVED');
 
-  // 4. Create Documents for App 1 & App 2
+  // 4. Create Documents for App 1 & App 2 with Enterprise Metadata
   const doc1 = await prisma.applicationDocument.create({
     data: {
       applicationId: app1.id,
+      institutionId: apexInst.id,
+      departmentId: deptLegal.id,
+      categoryId: catLease.id,
+      uploaderId: instUser.id,
       documentType: 'LAND_TITLE_LEASE_DEED',
+      title: 'Apex Institute 30-Year Registered Land Lease Deed',
+      description: 'Certified perpetual indenture of lease executed with Delhi Development Authority for Plot 4A Sector 62.',
       fileName: 'apex_30yr_registered_lease_deed.pdf',
       originalName: 'Registered_Lease_Deed_SubRegistrar_Delhi.pdf',
       mimeType: 'application/pdf',
@@ -410,10 +515,26 @@ async function main() {
     },
   });
 
+  await prisma.documentVerification.create({
+    data: {
+      documentId: doc1.id,
+      verifierId: deptOfficer.id,
+      status: 'VERIFIED',
+      comments: 'DDA registration confirmed with sub-registrar ledger seal. 5.50 acres verified.',
+      createdAt: new Date('2026-10-12T11:20:00Z'),
+    },
+  });
+
   const doc2 = await prisma.applicationDocument.create({
     data: {
       applicationId: app1.id,
+      institutionId: apexInst.id,
+      departmentId: deptScrutiny.id,
+      categoryId: catInfra.id,
+      uploaderId: instUser.id,
       documentType: 'BUILDING_PLAN_SANCTION',
+      title: 'DDA Approved Master Sanctioned Building Plan',
+      description: 'Architectural blueprint and carpet area breakdown for Academic & Admin Blocks.',
       fileName: 'apex_sanctioned_building_plan.pdf',
       originalName: 'DDA_Approved_Building_Plan_Sanction.pdf',
       mimeType: 'application/pdf',
@@ -421,14 +542,20 @@ async function main() {
       filePath: 'uploads/docs/apex_building_plan.pdf',
       checksumSha256: '5e884898da28047151d0e56f8dc6292773603d0d6aabbdd62a11ef721d1542d8',
       version: 1,
-      status: 'OCR_COMPLETED',
+      status: 'UNDER_REVIEW',
     },
   });
 
   const doc3 = await prisma.applicationDocument.create({
     data: {
       applicationId: app2.id,
+      institutionId: bharatInst.id,
+      departmentId: deptLegal.id,
+      categoryId: catCompliance.id,
+      uploaderId: instUser.id,
       documentType: 'FIRE_SAFETY_NOC',
+      title: 'Delhi Fire Safety Clearance Certificate',
+      description: 'Annual statutory fire safety clearance certificate (requires immediate renewal).',
       fileName: 'apex_fire_safety_noc_2025.pdf',
       originalName: 'Delhi_Fire_Service_Certificate_NOC.pdf',
       mimeType: 'application/pdf',
@@ -437,14 +564,32 @@ async function main() {
       checksumSha256: '4b227777d4dd1fc61c6f884f48641d02b4d121d3fd328cb08b5531fcacdabf8a',
       version: 1,
       expiryDate: new Date('2026-09-15T00:00:00Z'), // Expired!
-      status: 'FLAGGED',
+      status: 'REJECTED',
+      rejectionReason: 'Certificate expired on 15-Sept-2026. Please obtain renewal inspection certificate.',
+    },
+  });
+
+  await prisma.documentVerification.create({
+    data: {
+      documentId: doc3.id,
+      verifierId: enterpriseAdmin.id,
+      status: 'REJECTED',
+      rejectionReason: 'Expired Fire NOC. Mandatory statutory compliance violation.',
+      comments: 'Flagged during automated compliance review and confirmed by admin.',
+      createdAt: new Date('2026-10-14T09:30:00Z'),
     },
   });
 
   const doc4 = await prisma.applicationDocument.create({
     data: {
       applicationId: app1.id,
+      institutionId: apexInst.id,
+      departmentId: deptScrutiny.id,
+      categoryId: catGeneral.id,
+      uploaderId: instUser.id,
       documentType: 'AICTE_UNDERTAKING_AFFIDAVIT',
+      title: 'AICTE Statutory Undertaking & Appendix 3 Affidavit',
+      description: 'Duly notarized affidavit confirming non-capitation fee policy and anti-ragging measures.',
       fileName: 'apex_aicte_affidavit_undertaking.pdf',
       originalName: 'Affidavit_Undertaking_APH_Appendix_3.pdf',
       mimeType: 'application/pdf',
@@ -452,11 +597,60 @@ async function main() {
       filePath: 'uploads/docs/apex_affidavit.pdf',
       checksumSha256: 'ef2d127de37b942baad06145e54b0c619a1f22327b2ebbcfbec78f5564afe39d',
       version: 1,
-      status: 'OCR_COMPLETED',
+      status: 'VERIFIED',
+      verifiedBy: deptOfficer.fullName,
+      verifiedAt: new Date('2026-10-15T14:10:00Z'),
     },
   });
 
-  console.log('✓ Created 4 Application Documents');
+  // Additional Seeded Documents across Categories
+  const doc5 = await prisma.applicationDocument.create({
+    data: {
+      applicationId: app1.id,
+      institutionId: apexInst.id,
+      departmentId: deptQuality.id,
+      categoryId: catAccreditation.id,
+      uploaderId: enterpriseAdmin.id,
+      documentType: 'BAR_COUNCIL_PCI_COA_APPROVAL',
+      title: 'NBA Tier-1 Accreditation Compliance Report',
+      description: 'National Board of Accreditation 3-Year Outcome Assessment for Computer Engineering.',
+      fileName: 'apex_nba_accreditation_2025.pdf',
+      originalName: 'NBA_Tier1_Accreditation_Certificate_Apex.pdf',
+      mimeType: 'application/pdf',
+      fileSize: 3120000,
+      filePath: 'uploads/docs/apex_nba_certificate.pdf',
+      checksumSha256: '1a2b3c4d5e6f7a8b9c0d1e2f3a4b5c6d7e8f9a0b1c2d3e4f5a6b7c8d9e0f1a2b',
+      version: 1,
+      status: 'VERIFIED',
+      verifiedBy: superAdmin.fullName,
+      verifiedAt: new Date('2026-10-16T16:00:00Z'),
+    },
+  });
+
+  const doc6 = await prisma.applicationDocument.create({
+    data: {
+      applicationId: app1.id,
+      institutionId: apexInst.id,
+      departmentId: deptScrutiny.id,
+      categoryId: catFinancial.id,
+      uploaderId: deptOfficer.id,
+      documentType: 'AUDITED_BALANCE_SHEET',
+      title: 'Audited Financial Statements & Balance Sheet FY 2024-25',
+      description: 'Statutory auditor chartered accountant report, income expenditure sheet, and FDR proofs.',
+      fileName: 'apex_audited_balance_sheet_2025.pdf',
+      originalName: 'Chartered_Accountant_Audited_Balance_Sheet.pdf',
+      mimeType: 'application/pdf',
+      fileSize: 5210000,
+      filePath: 'uploads/docs/apex_audited_financials.pdf',
+      checksumSha256: '9a8b7c6d5e4f3a2b1c0d9e8f7a6b5c4d3e2f1a0b9c8d7e6f5a4b3c2d1e0f9a8b',
+      version: 1,
+      status: 'VERIFIED',
+      verifiedBy: enterpriseAdmin.fullName,
+      verifiedAt: new Date('2026-10-17T11:45:00Z'),
+    },
+  });
+
+  console.log('✓ Created 6 Enterprise Application Documents with Verification Trails');
 
   // 5. Create OCR Extractions
   await prisma.documentExtraction.create({
@@ -930,6 +1124,140 @@ async function main() {
   });
 
   console.log('✓ Created 9 Enterprise Tasks across Evaluator, Fresher & Department Officer');
+
+  // 11c. Create Enterprise Document Requests & Notifications (Employee Missing Document Workflow)
+  const req1 = await prisma.documentRequest.create({
+    data: {
+      requestNumber: 'DOC-REQ-2026-0001',
+      title: 'Audited Balance Sheet & Financial Statements FY 2025-26',
+      categoryId: catFinancial.id,
+      categoryName: 'Financial Documents',
+      description: 'Chartered accountant verified balance sheet and revenue statement for Apex Institute.',
+      reason: 'Required to verify endowment fund status and financial viability under Chapter 3 EoA scrutiny checklist.',
+      priority: 'HIGH',
+      requiredByDate: new Date(Date.now() + 86400000 * 3),
+      status: 'SUBMITTED',
+      requesterId: evaluatorUser.id,
+      departmentId: deptScrutiny.id,
+      applicationId: app1.id,
+    },
+  });
+
+  const req2 = await prisma.documentRequest.create({
+    data: {
+      requestNumber: 'DOC-REQ-2026-0002',
+      title: 'Municipal Master Sanctioned Building Plan Blueprint',
+      categoryId: catInfra.id,
+      categoryName: 'Infrastructure Documents',
+      description: 'High-resolution blueprint with DDA architectural approval stamp and carpet area dimensions.',
+      reason: 'Needed to compute carpet area against instructional requirements for junior evaluator training module.',
+      priority: 'NORMAL',
+      requiredByDate: new Date(Date.now() + 86400000 * 5),
+      status: 'ASSIGNED',
+      requesterId: fresherUser.id,
+      assignedToId: deptOfficer.id,
+      departmentId: deptScrutiny.id,
+      applicationId: app1.id,
+    },
+  });
+
+  await prisma.documentRequestAssignment.create({
+    data: {
+      requestId: req2.id,
+      assignedById: enterpriseAdmin.id,
+      assignedToId: deptOfficer.id,
+      notes: 'Please verify if DDA approved master copy is filed in physical registry.',
+    },
+  });
+
+  const req3 = await prisma.documentRequest.create({
+    data: {
+      requestNumber: 'DOC-REQ-2026-0003',
+      title: 'Fire Safety Certificate Renewal Inspection Report',
+      categoryId: catCompliance.id,
+      categoryName: 'Compliance Evidence',
+      description: 'State Fire Advisory Board official inspection challan or provisional renewal NOC.',
+      reason: 'Existing Fire NOC expired on 15-Sept-2026. Cannot clear safety compliance without valid renewal certificate.',
+      priority: 'URGENT',
+      requiredByDate: new Date(Date.now() + 86400000 * 1),
+      status: 'IN_PROGRESS',
+      requesterId: evaluatorUser.id,
+      assignedToId: enterpriseAdmin.id,
+      departmentId: deptLegal.id,
+      applicationId: app2.id,
+    },
+  });
+
+  console.log('✓ Created 3 Enterprise Document Requests with Multi-Tier Assignments');
+
+  // 11d. Create Document Request Notifications for Super Admin, Admin, HR & Requesters
+  await prisma.notification.createMany({
+    data: [
+      {
+        userId: superAdmin.id,
+        category: 'DOCUMENT_REQUEST',
+        severity: 'WARNING',
+        title: 'New Document Request: DOC-REQ-2026-0001 (HIGH Priority)',
+        message: 'Evaluator Rajesh Kulkarni requested "Audited Balance Sheet & Financial Statements FY 2025-26" for Apex Institute.',
+        link: '/documents?tab=requests&id=' + req1.id,
+        read: false,
+        metadataJson: JSON.stringify({
+          requestId: req1.id,
+          requestNumber: req1.requestNumber,
+          title: req1.title,
+          requesterName: evaluatorUser.fullName,
+          priority: req1.priority,
+          department: deptScrutiny.name,
+          requiredByDate: req1.requiredByDate,
+        }),
+      },
+      {
+        userId: enterpriseAdmin.id,
+        category: 'DOCUMENT_REQUEST',
+        severity: 'WARNING',
+        title: 'Document Request Needs Assignment: DOC-REQ-2026-0001',
+        message: 'Evaluator Rajesh Kulkarni requested "Audited Balance Sheet & Financial Statements FY 2025-26" for scrutiny.',
+        link: '/documents?tab=requests&id=' + req1.id,
+        read: false,
+        metadataJson: JSON.stringify({
+          requestId: req1.id,
+          requestNumber: req1.requestNumber,
+          title: req1.title,
+          requesterName: evaluatorUser.fullName,
+          priority: req1.priority,
+        }),
+      },
+      {
+        userId: deptOfficer.id,
+        category: 'DOCUMENT_REQUEST',
+        severity: 'WARNING',
+        title: 'Department Document Request: DOC-REQ-2026-0001',
+        message: 'Rajesh Kulkarni in Scrutiny department submitted a high-priority request for missing financial records.',
+        link: '/documents?tab=requests&id=' + req1.id,
+        read: false,
+      },
+      {
+        userId: deptOfficer.id,
+        category: 'DOCUMENT_REQUEST',
+        severity: 'INFO',
+        title: 'Assigned Document Request: DOC-REQ-2026-0002',
+        message: 'Admin Meera Nambiar assigned you to fulfill "Municipal Master Sanctioned Building Plan Blueprint" for Amit Verma (Fresher).',
+        link: '/documents?tab=requests&id=' + req2.id,
+        read: false,
+      },
+      {
+        userId: evaluatorUser.id,
+        category: 'DOCUMENT_REQUEST',
+        severity: 'INFO',
+        title: 'Document Request Submitted: DOC-REQ-2026-0001',
+        message: 'Your request for "Audited Balance Sheet & Financial Statements FY 2025-26" has been dispatched to HR and Administration.',
+        link: '/documents?tab=my-requests',
+        read: false,
+      },
+    ],
+  });
+
+  console.log('✓ Created Multi-Role Notifications for Document Requests');
 
   // 12. Create Baseline Audit Trail
   await prisma.auditEvent.createMany({

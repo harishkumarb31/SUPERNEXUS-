@@ -73,6 +73,7 @@ export const AppLayout: React.FC = () => {
     Organization: true,
     Applications: false,
     ApprovalWorkflow: false,
+    'Document Management': true,
   });
 
   const toggleSidebarCollapse = () => {
@@ -187,7 +188,23 @@ export const AppLayout: React.FC = () => {
                 { name: 'Approval Decisions', path: '/applications?stage=AWAITING_DECISION' },
               ],
             },
-            { name: 'Document Vault', path: '/documents', icon: FileCheck2 },
+            {
+              name: 'Document Management',
+              path: '/documents',
+              icon: FileCheck2,
+              children: [
+                { name: 'Document Overview', path: '/documents?tab=overview' },
+                { name: 'Upload Documents', path: '/documents?tab=upload' },
+                { name: 'Document Repository', path: '/documents?tab=repository' },
+                { name: 'Verification Queue', path: '/documents?tab=verification' },
+                { name: 'Verified Documents', path: '/documents?tab=verified' },
+                { name: 'Rejected Documents', path: '/documents?tab=rejected' },
+                { name: 'Document Requests', path: '/documents?tab=requests' },
+                { name: 'Pending Requests', path: '/documents?tab=pending-requests' },
+                { name: 'Document Categories', path: '/documents?tab=categories' },
+                { name: 'OCR & AI Scrutiny', path: '/documents?tab=ocr-intelligence' },
+              ],
+            },
             { name: 'Compliance Monitor', path: '/compliance', icon: ShieldAlert },
             { name: 'EVC Committees', path: '/evc', icon: CalendarCheck2 },
             { name: 'Task Assignments', path: '/tasks', icon: CheckSquare },
@@ -226,7 +243,23 @@ export const AppLayout: React.FC = () => {
               ],
             },
             { name: 'Applications Registry', path: '/applications', icon: FileText },
-            { name: 'Document Scrutiny', path: '/documents', icon: FileCheck2 },
+            {
+              name: 'Document Management',
+              path: '/documents',
+              icon: FileCheck2,
+              children: [
+                { name: 'Document Overview', path: '/documents?tab=overview' },
+                { name: 'Upload Documents', path: '/documents?tab=upload' },
+                { name: 'Document Repository', path: '/documents?tab=repository' },
+                { name: 'Verification Queue', path: '/documents?tab=verification' },
+                { name: 'Verified Documents', path: '/documents?tab=verified' },
+                { name: 'Rejected Documents', path: '/documents?tab=rejected' },
+                { name: 'Document Requests', path: '/documents?tab=requests' },
+                { name: 'Pending Requests', path: '/documents?tab=pending-requests' },
+                { name: 'Document Categories', path: '/documents?tab=categories' },
+                { name: 'OCR & AI Scrutiny', path: '/documents?tab=ocr-intelligence' },
+              ],
+            },
             { name: 'Compliance Center', path: '/compliance', icon: ShieldAlert },
             { name: 'EVC Inspections', path: '/evc', icon: CalendarCheck2 },
             { name: 'Assigned Tasks', path: '/tasks', icon: CheckSquare },
@@ -253,7 +286,22 @@ export const AppLayout: React.FC = () => {
           title: 'Scrutiny & Tasks',
           items: [
             { name: 'Applications Queue', path: '/applications', icon: FileText },
-            { name: 'Document Verification', path: '/documents', icon: FileCheck2 },
+            {
+              name: 'Document Management',
+              path: '/documents',
+              icon: FileCheck2,
+              children: [
+                { name: 'Document Dashboard', path: '/documents?tab=overview' },
+                { name: 'Upload Documents', path: '/documents?tab=upload' },
+                { name: 'Document Repository', path: '/documents?tab=repository' },
+                { name: 'Verification Queue', path: '/documents?tab=verification' },
+                { name: 'Verified Documents', path: '/documents?tab=verified' },
+                { name: 'Rejected Documents', path: '/documents?tab=rejected' },
+                { name: 'Employee Document Requests', path: '/documents?tab=requests' },
+                { name: 'Document Categories', path: '/documents?tab=categories' },
+                { name: 'OCR & AI Scrutiny', path: '/documents?tab=ocr-intelligence' },
+              ],
+            },
             { name: 'Compliance Checklist', path: '/compliance', icon: ShieldAlert },
             { name: 'Department Tasks', path: '/tasks', icon: CheckSquare },
             { name: 'EVC Committee Reviews', path: '/evc', icon: CalendarCheck2 },
@@ -281,7 +329,21 @@ export const AppLayout: React.FC = () => {
           title: 'Assigned Workload',
           items: [
             { name: 'My Assigned Cases', path: '/applications?assigned=me', icon: FileText },
-            { name: 'Document Inspection', path: '/documents', icon: FileCheck2 },
+            {
+              name: 'Document Management',
+              path: '/documents',
+              icon: FileCheck2,
+              children: [
+                { name: 'My Documents', path: '/documents?tab=my-docs' },
+                { name: 'Upload Documents', path: '/documents?tab=upload' },
+                { name: 'Verified Documents', path: '/documents?tab=verified' },
+                { name: 'Pending Verification', path: '/documents?tab=verification' },
+                { name: 'Rejected Documents', path: '/documents?tab=rejected' },
+                { name: 'Request a Document', path: '/documents?tab=request-new' },
+                { name: 'My Document Requests', path: '/documents?tab=my-requests' },
+                { name: 'Document Repository', path: '/documents?tab=repository' },
+              ],
+            },
             { name: 'EVC Inspections & Scoring', path: '/evc', icon: CalendarCheck2 },
             { name: 'Compliance Checklist', path: '/compliance', icon: ShieldAlert },
             { name: 'My Tasks Queue', path: '/tasks', icon: CheckSquare },
@@ -309,7 +371,19 @@ export const AppLayout: React.FC = () => {
           items: [
             { name: 'Learning Workspace', path: '/learning', icon: GraduationCap },
             { name: 'Assigned Practice Tasks', path: '/tasks', icon: CheckSquare },
-            { name: 'Authorized Documents', path: '/documents', icon: FileCheck2 },
+            {
+              name: 'Document Management',
+              path: '/documents',
+              icon: FileCheck2,
+              children: [
+                { name: 'My Documents', path: '/documents?tab=my-docs' },
+                { name: 'Upload Documents', path: '/documents?tab=upload' },
+                { name: 'Verification Status', path: '/documents?tab=verification' },
+                { name: 'Request a Document', path: '/documents?tab=request-new' },
+                { name: 'My Requests', path: '/documents?tab=my-requests' },
+                { name: 'Authorized Documents', path: '/documents?tab=repository' },
+              ],
+            },
             { name: 'Verification Guidelines', path: '/assistant', icon: BookOpen },
           ],
         },
@@ -334,6 +408,16 @@ export const AppLayout: React.FC = () => {
           title: 'Oversight',
           items: [
             { name: 'Application Tracking', path: '/applications', icon: FileText },
+            {
+              name: 'Document Management',
+              path: '/documents',
+              icon: FileCheck2,
+              children: [
+                { name: 'Authorized Documents', path: '/documents?tab=repository' },
+                { name: 'Verified Documents', path: '/documents?tab=verified' },
+                { name: 'Document Overview', path: '/documents?tab=overview' },
+              ],
+            },
             { name: 'Authorized Reports', path: '/reports', icon: BarChart3 },
             { name: 'Regulatory Assistant', path: '/assistant', icon: Bot },
           ],
@@ -357,7 +441,16 @@ export const AppLayout: React.FC = () => {
         title: 'Application & Compliance',
         items: [
           { name: 'My Approval Applications', path: '/applications', icon: FileText },
-          { name: 'Document Vault', path: '/documents', icon: FileCheck2 },
+          {
+            name: 'Document Management',
+            path: '/documents',
+            icon: FileCheck2,
+            children: [
+              { name: 'Document Vault', path: '/documents?tab=repository' },
+              { name: 'Upload Documents', path: '/documents?tab=upload' },
+              { name: 'My Documents', path: '/documents?tab=my-docs' },
+            ],
+          },
           { name: 'Compliance Covenants', path: '/compliance', icon: ShieldAlert },
           { name: 'AI Regulatory Assistant', path: '/assistant', icon: Bot },
         ],
@@ -477,22 +570,26 @@ export const AppLayout: React.FC = () => {
 
                         {isExpanded && (
                           <div className="pl-9 space-y-1">
-                            {item.children!.map((child) => (
-                              <NavLink
-                                key={child.path}
-                                to={child.path}
-                                onClick={() => setSidebarOpen(false)}
-                                className={({ isActive }) =>
-                                  `block px-2.5 py-1.5 rounded-md text-[11px] font-medium transition-colors ${
-                                    isActive
+                            {item.children!.map((child) => {
+                              const isChildActive = child.path.includes('?')
+                                ? (location.pathname + location.search) === child.path
+                                : location.pathname === child.path && !location.search;
+
+                              return (
+                                <NavLink
+                                  key={child.path}
+                                  to={child.path}
+                                  onClick={() => setSidebarOpen(false)}
+                                  className={`block px-2.5 py-1.5 rounded-md text-[11px] font-medium transition-colors ${
+                                    isChildActive
                                       ? 'bg-indigo-600/30 text-indigo-300 font-semibold border-l-2 border-indigo-500'
                                       : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800/40'
-                                  }`
-                                }
-                              >
-                                {child.name}
-                              </NavLink>
-                            ))}
+                                  }`}
+                                >
+                                  {child.name}
+                                </NavLink>
+                              );
+                            })}
                           </div>
                         )}
                       </div>

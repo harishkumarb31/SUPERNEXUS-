@@ -11,21 +11,21 @@ datasource db {
 }
 
 model User {
-  id              String        @id @default(uuid())
-  email           String        @unique
-  passwordHash    String
-  fullName        String
-  role            String
-  phone           String?
-  designation     String?
-  region          String?
-  departmentId    String?
-  department      Department?   @relation(fields: [departmentId], references: [id], onDelete: SetNull)
-  institutionId   String?
-  institution     Institution?  @relation(fields: [institutionId], references: [id])
-  active          Boolean       @default(true)
-  createdAt       DateTime      @default(now())
-  updatedAt       DateTime      @updatedAt
+  id                   String        @id @default(uuid())
+  email                String        @unique
+  passwordHash         String
+  fullName             String
+  role                 String        // SUPER_ADMIN, ADMIN, DEPARTMENT_OFFICER, EVALUATOR, FRESHER, VIEWER, INSTITUTION_USER, etc.
+  phone                String?
+  designation          String?
+  region               String?       // NORTHERN, WESTERN, SOUTHERN, EASTERN, CENTRAL, SOUTH_WESTERN
+  departmentId         String?
+  department           Department?   @relation(fields: [departmentId], references: [id], onDelete: SetNull)
+  institutionId        String?
+  institution          Institution?  @relation(fields: [institutionId], references: [id])
+  active               Boolean       @default(true)
+  createdAt            DateTime      @default(now())
+  updatedAt            DateTime      @updatedAt
 
   assignedApplications Application[] @relation("AssignedOfficer")
   auditEvents          AuditEvent[]
@@ -33,6 +33,16 @@ model User {
   findingsResolved     ValidationFinding[] @relation("ResolvedFindings")
   assignedTasks        UserTask[]    @relation("AssignedTo")
   createdTasks         UserTask[]    @relation("AssignedBy")
+
+  // Enterprise Document & Request Relations
+  uploadedDocuments    ApplicationDocument[] @relation("UploadedDocuments")
+  documentVerifications DocumentVerification[] @relation("DocumentVerifications")
+  uploadedVersions     DocumentVersion[]     @relation("UploadedVersions")
+  createdDocRequests   DocumentRequest[]     @relation("CreatedDocRequests")
+  assignedDocRequests  DocumentRequest[]     @relation("AssignedDocRequests")
+  assignedByDocReq     DocumentRequestAssignment[] @relation("AssignedByDocReq")
+  assignedToDocReq     DocumentRequestAssignment[] @relation("AssignedToDocReq")
+  docAccessLogs        DocumentAccessLog[]   @relation("UserDocAccessLogs")
 }
 
 model Department {
@@ -44,6 +54,8 @@ model Department {
   updatedAt       DateTime      @updatedAt
 
   users           User[]
+  documents       ApplicationDocument[]
+  documentRequests DocumentRequest[]
 }
 
 model UserTask {
@@ -63,6 +75,9 @@ model UserTask {
   application     Application?  @relation(fields: [applicationId], references: [id], onDelete: SetNull)
   createdAt       DateTime      @default(now())
   updatedAt       DateTime      @updatedAt
+
+  documents       ApplicationDocument[] @relation("TaskDocuments")
+  documentRequests DocumentRequest[]     @relation("TaskDocRequests")
 }
 
 model Institution {
@@ -85,6 +100,7 @@ model Institution {
   applications    Application[]
   complianceItems ComplianceObligation[]
   notifications   Notification[]
+  documents       ApplicationDocument[]
 }
 
 model Application {
@@ -116,29 +132,147 @@ model Application {
   stageHistory        ApplicationStageHistory[]
   notifications       Notification[]
   tasks               UserTask[]
+  documentRequests    DocumentRequest[]
+}
+
+model DocumentCategory {
+  id              String        @id @default(uuid())
+  name            String        @unique
+  code            String        @unique
+  description     String?
+  isDefault       Boolean       @default(false)
+  createdAt       DateTime      @default(now())
+  updatedAt       DateTime      @updatedAt
+
+  documents       ApplicationDocument[]
+  requests        DocumentRequest[]
 }
 
 model ApplicationDocument {
-  id                  String        @id @default(uuid())
-  applicationId       String
-  application         Application   @relation(fields: [applicationId], references: [id], onDelete: Cascade)
+  id                  String              @id @default(uuid())
+  applicationId       String?
+  application         Application?        @relation(fields: [applicationId], references: [id], onDelete: Cascade)
   documentType        String
+  title               String?
+  description         String?
   fileName            String
   originalName        String
   mimeType            String
   fileSize            Int
   filePath            String
   checksumSha256      String
-  version             Int           @default(1)
-  uploadDate          DateTime      @default(now())
+  version             Int                 @default(1)
+  uploadDate          DateTime            @default(now())
   expiryDate          DateTime?
-  status              String        @default("PENDING_OCR")
+  status              String              @default("PENDING_VERIFICATION")
+  rejectionReason     String?
   verifiedBy          String?
   verifiedAt          DateTime?
+
+  categoryId          String?
+  category            DocumentCategory?   @relation(fields: [categoryId], references: [id], onDelete: SetNull)
+  departmentId        String?
+  department          Department?         @relation(fields: [departmentId], references: [id], onDelete: SetNull)
+  uploaderId          String?
+  uploader            User?               @relation("UploadedDocuments", fields: [uploaderId], references: [id], onDelete: SetNull)
+  institutionId       String?
+  institution         Institution?        @relation(fields: [institutionId], references: [id], onDelete: SetNull)
+  taskId              String?
+  task                UserTask?           @relation("TaskDocuments", fields: [taskId], references: [id], onDelete: SetNull)
+
+  isRestricted        Boolean             @default(false)
+  allowedUserIds      String?
 
   extractions         DocumentExtraction[]
   findings            ValidationFinding[]
   complianceItems     ComplianceObligation[]
+  verifications       DocumentVerification[]
+  versions            DocumentVersion[]
+  accessLogs          DocumentAccessLog[]
+  fulfilledRequests   DocumentRequest[]   @relation("FulfilledDoc")
+}
+
+model DocumentVerification {
+  id              String              @id @default(uuid())
+  documentId      String
+  document        ApplicationDocument @relation(fields: [documentId], references: [id], onDelete: Cascade)
+  verifierId      String
+  verifier        User                @relation("DocumentVerifications", fields: [verifierId], references: [id], onDelete: Cascade)
+  status          String
+  comments        String?
+  rejectionReason String?
+  createdAt       DateTime            @default(now())
+}
+
+model DocumentVersion {
+  id              String              @id @default(uuid())
+  documentId      String
+  document        ApplicationDocument @relation(fields: [documentId], references: [id], onDelete: Cascade)
+  versionNumber   Int
+  fileName        String
+  originalName    String
+  filePath        String
+  fileSize        Int
+  checksumSha256  String
+  uploadedById    String?
+  uploadedBy      User?               @relation("UploadedVersions", fields: [uploadedById], references: [id], onDelete: SetNull)
+  changeSummary   String?
+  createdAt       DateTime            @default(now())
+}
+
+model DocumentRequest {
+  id                  String                    @id @default(uuid())
+  requestNumber       String                    @unique
+  title               String
+  categoryId          String?
+  category            DocumentCategory?         @relation(fields: [categoryId], references: [id], onDelete: SetNull)
+  categoryName        String?
+  description         String?
+  reason              String
+  priority            String                    @default("NORMAL")
+  requiredByDate      DateTime?
+  status              String                    @default("SUBMITTED")
+  requesterId         String
+  requester           User                      @relation("CreatedDocRequests", fields: [requesterId], references: [id], onDelete: Cascade)
+  assignedToId        String?
+  assignedTo          User?                     @relation("AssignedDocRequests", fields: [assignedToId], references: [id], onDelete: SetNull)
+  departmentId        String?
+  department          Department?               @relation(fields: [departmentId], references: [id], onDelete: SetNull)
+  applicationId       String?
+  application         Application?              @relation(fields: [applicationId], references: [id], onDelete: SetNull)
+  taskId              String?
+  task                UserTask?                 @relation("TaskDocRequests", fields: [taskId], references: [id], onDelete: SetNull)
+  fulfilledDocumentId String?
+  fulfilledDocument   ApplicationDocument?      @relation("FulfilledDoc", fields: [fulfilledDocumentId], references: [id], onDelete: SetNull)
+  rejectionReason     String?
+  clarificationNotes  String?
+  assignments         DocumentRequestAssignment[]
+  createdAt           DateTime                  @default(now())
+  updatedAt           DateTime                  @updatedAt
+}
+
+model DocumentRequestAssignment {
+  id              String          @id @default(uuid())
+  requestId       String
+  request         DocumentRequest @relation(fields: [requestId], references: [id], onDelete: Cascade)
+  assignedById    String?
+  assignedBy      User?           @relation("AssignedByDocReq", fields: [assignedById], references: [id], onDelete: SetNull)
+  assignedToId    String
+  assignedTo      User            @relation("AssignedToDocReq", fields: [assignedToId], references: [id], onDelete: Cascade)
+  notes           String?
+  timestamp       DateTime        @default(now())
+}
+
+model DocumentAccessLog {
+  id              String              @id @default(uuid())
+  documentId      String
+  document        ApplicationDocument @relation(fields: [documentId], references: [id], onDelete: Cascade)
+  userId          String
+  user            User                @relation("UserDocAccessLogs", fields: [userId], references: [id], onDelete: Cascade)
+  action          String
+  ipAddress       String?
+  userAgent       String?
+  timestamp       DateTime            @default(now())
 }
 
 model DocumentExtraction {
@@ -232,12 +366,14 @@ model Notification {
   institution         Institution?        @relation(fields: [institutionId], references: [id], onDelete: Cascade)
   applicationId       String?
   application         Application?        @relation(fields: [applicationId], references: [id], onDelete: Cascade)
+  documentRequestId   String?
   category            String
   severity            String              @default("INFO")
   title               String
   message             String
   link                String?
   read                Boolean             @default(false)
+  metadataJson        String?
   createdAt           DateTime            @default(now())
 }
 
@@ -282,4 +418,3 @@ model AuditEvent {
   userAgent           String?
   timestamp           DateTime            @default(now())
 }
-

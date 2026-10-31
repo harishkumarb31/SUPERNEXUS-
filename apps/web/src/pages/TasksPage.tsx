@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import {
   CheckSquare,
   Clock,
@@ -20,6 +21,7 @@ import { UserTask, UserRole } from '../types';
 
 export const TasksPage: React.FC = () => {
   const { user } = useAuth();
+  const navigate = useNavigate();
   const [tasks, setTasks] = useState<UserTask[]>([]);
   const [stats, setStats] = useState<any>(null);
   const [loading, setLoading] = useState(true);
@@ -391,6 +393,36 @@ export const TasksPage: React.FC = () => {
                   >
                     {task.status.replace(/_/g, ' ')}
                   </span>
+
+                  <div className="flex items-center space-x-1.5 mt-1">
+                    <button
+                      onClick={() =>
+                        navigate(
+                          `/documents?tab=repository&taskId=${task.id}&appId=${task.applicationId || ''}`
+                        )
+                      }
+                      className="p-1 text-[11px] font-medium text-slate-500 hover:text-indigo-600 dark:hover:text-indigo-400 flex items-center"
+                      title="Search document repository for this task"
+                    >
+                      <FileCheck2 className="w-3.5 h-3.5 mr-1" />
+                      Vault
+                    </button>
+
+                    <button
+                      onClick={() =>
+                        navigate(
+                          `/documents?tab=request-new&taskId=${task.id}&taskTitle=${encodeURIComponent(
+                            task.title
+                          )}&appId=${task.applicationId || ''}`
+                        )
+                      }
+                      className="px-2 py-0.5 text-[10px] font-semibold bg-purple-50 dark:bg-purple-950/40 text-purple-600 dark:text-purple-300 rounded border border-purple-200 dark:border-purple-800 hover:bg-purple-100 flex items-center"
+                      title="Request missing file if document is unavailable"
+                    >
+                      <Plus className="w-3 h-3 mr-0.5" />
+                      Request Doc
+                    </button>
+                  </div>
                 </div>
               </div>
             </div>

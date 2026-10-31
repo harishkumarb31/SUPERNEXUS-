@@ -16,7 +16,7 @@ export class OcrController {
       const result = await OcrService.processDocument(documentId);
       const doc = await prisma.applicationDocument.findUnique({ where: { id: documentId } });
 
-      if (doc) {
+      if (doc && doc.applicationId) {
         await ValidationEngine.validateApplication(doc.applicationId);
       }
 

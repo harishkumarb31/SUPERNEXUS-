@@ -44,6 +44,11 @@ export enum Permission {
   DOCUMENT_VIEW = 'document.view',
   DOCUMENT_UPLOAD = 'document.upload',
   DOCUMENT_VERIFY = 'document.verify',
+  DOCUMENT_REJECT = 'document.reject',
+  DOCUMENT_DELETE = 'document.delete',
+  DOCUMENT_REQUEST = 'document.request',
+  DOCUMENT_REQUEST_MANAGE = 'document.request.manage',
+  DOCUMENT_CATEGORY_MANAGE = 'document.category.manage',
 
   // Compliance
   COMPLIANCE_VIEW = 'compliance.view',
@@ -79,7 +84,13 @@ export const ROLE_PERMISSIONS: Record<UserRole, Permission[]> = {
     Permission.APPLICATION_REVIEW,
     Permission.APPLICATION_APPROVE,
     Permission.DOCUMENT_VIEW,
+    Permission.DOCUMENT_UPLOAD,
     Permission.DOCUMENT_VERIFY,
+    Permission.DOCUMENT_REJECT,
+    Permission.DOCUMENT_DELETE,
+    Permission.DOCUMENT_REQUEST,
+    Permission.DOCUMENT_REQUEST_MANAGE,
+    Permission.DOCUMENT_CATEGORY_MANAGE,
     Permission.COMPLIANCE_VIEW,
     Permission.COMPLIANCE_MANAGE,
     Permission.TASK_VIEW,
@@ -99,7 +110,13 @@ export const ROLE_PERMISSIONS: Record<UserRole, Permission[]> = {
     Permission.APPLICATION_REVIEW,
     Permission.APPLICATION_APPROVE,
     Permission.DOCUMENT_VIEW,
+    Permission.DOCUMENT_UPLOAD,
     Permission.DOCUMENT_VERIFY,
+    Permission.DOCUMENT_REJECT,
+    Permission.DOCUMENT_DELETE,
+    Permission.DOCUMENT_REQUEST,
+    Permission.DOCUMENT_REQUEST_MANAGE,
+    Permission.DOCUMENT_CATEGORY_MANAGE,
     Permission.COMPLIANCE_VIEW,
     Permission.COMPLIANCE_MANAGE,
     Permission.TASK_VIEW,
@@ -117,7 +134,12 @@ export const ROLE_PERMISSIONS: Record<UserRole, Permission[]> = {
     Permission.APPLICATION_VIEW,
     Permission.APPLICATION_REVIEW,
     Permission.DOCUMENT_VIEW,
+    Permission.DOCUMENT_UPLOAD,
     Permission.DOCUMENT_VERIFY,
+    Permission.DOCUMENT_REJECT,
+    Permission.DOCUMENT_REQUEST,
+    Permission.DOCUMENT_REQUEST_MANAGE,
+    Permission.DOCUMENT_CATEGORY_MANAGE,
     Permission.COMPLIANCE_VIEW,
     Permission.TASK_VIEW,
     Permission.TASK_MANAGE,
@@ -131,7 +153,12 @@ export const ROLE_PERMISSIONS: Record<UserRole, Permission[]> = {
     Permission.APPLICATION_VIEW,
     Permission.APPLICATION_REVIEW,
     Permission.DOCUMENT_VIEW,
+    Permission.DOCUMENT_UPLOAD,
     Permission.DOCUMENT_VERIFY,
+    Permission.DOCUMENT_REJECT,
+    Permission.DOCUMENT_REQUEST,
+    Permission.DOCUMENT_REQUEST_MANAGE,
+    Permission.DOCUMENT_CATEGORY_MANAGE,
     Permission.COMPLIANCE_VIEW,
     Permission.TASK_VIEW,
     Permission.TASK_MANAGE,
@@ -143,7 +170,9 @@ export const ROLE_PERMISSIONS: Record<UserRole, Permission[]> = {
     Permission.APPLICATION_VIEW,
     Permission.APPLICATION_REVIEW,
     Permission.DOCUMENT_VIEW,
+    Permission.DOCUMENT_UPLOAD,
     Permission.DOCUMENT_VERIFY,
+    Permission.DOCUMENT_REQUEST,
     Permission.COMPLIANCE_VIEW,
     Permission.TASK_VIEW,
     Permission.TASK_MANAGE
@@ -152,7 +181,9 @@ export const ROLE_PERMISSIONS: Record<UserRole, Permission[]> = {
     Permission.APPLICATION_VIEW,
     Permission.APPLICATION_REVIEW,
     Permission.DOCUMENT_VIEW,
+    Permission.DOCUMENT_UPLOAD,
     Permission.DOCUMENT_VERIFY,
+    Permission.DOCUMENT_REQUEST,
     Permission.COMPLIANCE_VIEW,
     Permission.TASK_VIEW,
     Permission.TASK_MANAGE
@@ -161,6 +192,8 @@ export const ROLE_PERMISSIONS: Record<UserRole, Permission[]> = {
   [UserRole.FRESHER]: [
     Permission.APPLICATION_VIEW,
     Permission.DOCUMENT_VIEW,
+    Permission.DOCUMENT_UPLOAD,
+    Permission.DOCUMENT_REQUEST,
     Permission.TASK_VIEW,
     Permission.TASK_MANAGE
   ],
@@ -263,11 +296,34 @@ export enum DocumentType {
 }
 
 export enum DocumentStatus {
+  UPLOADED = 'UPLOADED',
+  PENDING_VERIFICATION = 'PENDING_VERIFICATION',
+  UNDER_REVIEW = 'UNDER_REVIEW',
+  VERIFIED = 'VERIFIED',
+  REJECTED = 'REJECTED',
+  REQUIRES_RESUBMISSION = 'REQUIRES_RESUBMISSION',
+  // Compatibility
   PENDING_OCR = 'PENDING_OCR',
   OCR_COMPLETED = 'OCR_COMPLETED',
-  VERIFIED = 'VERIFIED',
-  FLAGGED = 'FLAGGED',
-  REJECTED = 'REJECTED'
+  FLAGGED = 'FLAGGED'
+}
+
+export enum DocumentRequestStatus {
+  SUBMITTED = 'SUBMITTED',
+  PENDING_ASSIGNMENT = 'PENDING_ASSIGNMENT',
+  ASSIGNED = 'ASSIGNED',
+  IN_PROGRESS = 'IN_PROGRESS',
+  DOCUMENT_UPLOADED = 'DOCUMENT_UPLOADED',
+  AVAILABLE_FOR_EMPLOYEE = 'AVAILABLE_FOR_EMPLOYEE',
+  REJECTED = 'REJECTED',
+  CLOSED = 'CLOSED'
+}
+
+export enum DocumentRequestPriority {
+  LOW = 'LOW',
+  NORMAL = 'NORMAL',
+  HIGH = 'HIGH',
+  URGENT = 'URGENT'
 }
 
 export enum FindingSeverity {
