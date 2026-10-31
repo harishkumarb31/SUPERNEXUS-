@@ -25,3 +25,4 @@ documentRequestRouter.patch(
   requirePermission(Permission.DOCUMENT_REQUEST_MANAGE),
   DocumentRequestController.updateStatus
 );
+

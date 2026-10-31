@@ -69,3 +69,4 @@ When an employee, subject-matter evaluator, or junior trainee receives an assign
 - **Urgent Priority Escalation**: Requests marked `URGENT` or approaching their `requiredByDate` trigger high-priority warning badges in the notification center.
 - **Deduplication**: Notifications are scoped by user identity to prevent spam.
 - **Traceability**: Every assignment, status transition, and comment is logged with timestamps in `DocumentRequestAssignment` and `AuditEvent`.
+

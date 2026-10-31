@@ -55,3 +55,4 @@ This document provides the authoritative mapping of document and request permiss
 - Strictly read-only access.
 - Restricted to verified, non-confidential records and aggregate reports.
 - All write, upload, request, and verify actions return **403 Forbidden**.
+

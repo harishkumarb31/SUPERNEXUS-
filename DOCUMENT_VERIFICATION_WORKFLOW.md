@@ -63,3 +63,4 @@ Every decision produces an immutable record in `DocumentVerification`:
 - **Timestamp**
 - **Mandatory Justification / Rejection Reason**
 - **Detailed Audit Trail** in `AuditEvent` with IP address and user agent.
+

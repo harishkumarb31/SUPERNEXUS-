@@ -78,3 +78,4 @@ This release introduces:
 - Multi-dimensional query filters on backend API (`GET /api/v1/documents`).
 - Role-scoping prevents cross-employee access leaks: junior reviewers and freshers cannot access confidential documents or dossiers of other employees without explicit authorization.
 - Secure controlled download endpoint (`/api/v1/documents/:id/download`) with access logging to `DocumentAccessLog`.
+
