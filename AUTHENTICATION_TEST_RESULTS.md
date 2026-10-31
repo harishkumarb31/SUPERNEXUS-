@@ -111,3 +111,4 @@
 | **Page Refresh with Saved Token** | Reads token from storage, validates via `/me`, preserves session. | Session maintained without re-login prompt. | **PASS** |
 | **Logout Execution** | Clears `regulaflow_token` and `regulaflow_user`, resets state. | User returned to `/login`; storage cleared. | **PASS** |
 | **Duplicate Form Submission** | Submit button disabled while `loading` is true. | Double-click prevented; single request sent. | **PASS** |
+

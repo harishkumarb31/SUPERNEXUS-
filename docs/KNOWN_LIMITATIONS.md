@@ -1,26 +1,28 @@
-# RegulaFlow AI — Known Limitations & Scope Boundaries
-**Problem Statement ID:** SIH26262 | Smart India Hackathon 2026
-**Theme:** Smart Automation | **Category:** Software
+# SuperNexus AI — Known Limitations & Architectural Notes
+
+**System:** SuperNexus AI (RegulaFlow Engine)  
+**Date:** October 31, 2026  
+**Version:** 2.0  
 
 ---
 
-## 1. Prototype & Evaluation Assumptions
+## 1. Known Architectural Characteristics
 
-1. **Local Sandbox Environment**:
-   - The evaluation prototype operates with a local SQLite database via Prisma ORM for zero-friction evaluation and offline jury review.
-   - A production-grade schema is pre-configured in `prisma/schema.postgresql.prisma` ready for cloud Postgres deployment.
+### 1.1 Serverless SQLite Ephemeral Storage
+* **Observation:** In Vercel serverless environments, SQLite is stored in `/tmp/dev.db`. Because serverless execution containers are ephemeral and spun down after periods of inactivity, writes to the SQLite database during a specific lambda invocation will reset when new containers spin up.
+* **Production Recommendation:** For persistent production data beyond demo evaluations, connect a managed PostgreSQL instance (e.g., Supabase, Neon, AWS RDS, or Railway) by specifying the `DATABASE_URL` environment variable in the Vercel dashboard.
 
-2. **OCR Engine Integration**:
-   - The application incorporates `tesseract.js` and `pdf-parse` for local OCR text and metadata extraction from uploaded PDF documents.
-   - For scanned physical affidavits with low optical clarity or degraded ink, cloud vision models (Google Cloud Document AI or AWS Textract) can be integrated via the modular `ocrService.ts` driver interface.
+### 1.2 OCR File Size and Serverless Timeouts
+* **Observation:** Tesseract.js / PDF parsing for large document files (>15MB) may exceed the default 10-second execution timeout on free-tier Vercel serverless functions.
+* **Mitigation:** The application includes a heuristic extraction fallback that parses text layers and structural regexes in milliseconds, preventing timeout errors.
 
-3. **Grounded RAG Regulatory Assistant**:
-   - The built-in regulatory knowledge base is grounded on official AICTE Approval Process Handbook (APH) clauses, land norms, faculty-to-student ratios, building safety standards, and fee structures.
-   - The default mode operates with grounded cosine semantic similarity and clause citation extraction. When a Gemini API key is configured in `.env`, the assistant transitions to hybrid LLM synthesis with grounded citations.
+### 1.3 Background Scheduler in Serverless
+* **Observation:** Long-running `node-cron` schedulers (`startScheduler()`) require a persistent process. In serverless environments, cron jobs do not run continuously in memory.
+* **Mitigation:** Manual compliance checks can be triggered on-demand via the "Run Compliance Scan" button on the dashboard (`POST /api/v1/compliance/check`), and Vercel Cron Jobs can be configured via `vercel.json` if automated scheduled execution is desired in production.
 
-4. **Official AICTE Portal Integration**:
-   - As mandated by SIH competition guidelines, this software prototype does not claim live API connectivity to confidential production government servers. Simulated data ingestion mimics realistic AICTE application formats, regional jurisdictions, and committee workflows.
+---
 
-5. **Frontend Bundle Size**:
-   - The single bundled vendor chunk is currently ~790 kB minified (gzip ~219 kB) containing Tailwind CSS, Lucide icons, and Chart.js/Recharts. In an enterprise release, route-based dynamic `import()` code-splitting can divide chunks below 200 kB.
-
+## 2. Maintenance & Support
+For issues or extensions, refer to:
+- Repository: `https://github.com/harishkumarb31/SUPERNEXUS-`
+- Documentation: `docs/ARCHITECTURE.md`, `docs/API.md`, `docs/TEST_RESULTS.md`

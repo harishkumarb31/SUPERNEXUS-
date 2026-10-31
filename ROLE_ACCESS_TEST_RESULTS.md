@@ -95,3 +95,4 @@
   ✓ Viewer cannot resolve validation findings (403 Forbidden)
   ✓ Department officer can transition scrutiny application (200)
 ```
+
