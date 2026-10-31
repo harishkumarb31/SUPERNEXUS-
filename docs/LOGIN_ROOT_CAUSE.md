@@ -110,3 +110,4 @@ Unsupported methods now return a structured JSON 405 error from the API applicat
 
 ### Layer 5: Edge Resilience Fallback Catalog
 In `apps/api/src/modules/auth/authController.ts`, integrated an in-memory fallback catalog for the 6 enterprise roles. Even if the SQLite database is undergoing cold-start filesystem initialization on Vercel, valid credentials (`Password@123`) authenticate with bcrypt verification and full JWT token generation.
+

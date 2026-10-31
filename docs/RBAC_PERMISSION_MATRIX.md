@@ -69,3 +69,4 @@ All test evaluation accounts share the standard password: `Password@123`
 RBAC is enforced on both frontend and backend boundaries:
 1. **Frontend:** [AppLayout.tsx](file:///c:/SIH_NEXUS/apps/web/src/layouts/AppLayout.tsx) computes permitted navigation groups and hides unauthorized menu links. Route components block direct unauthorized access via `user.role` verification.
 2. **Backend:** Express middleware `requireRole([...])` and `requirePermission(...)` intercept all HTTP requests. If the authenticated identity lacks the required scope, the request is immediately terminated with `HTTP 403 Forbidden`.
+

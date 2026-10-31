@@ -18,17 +18,25 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [user, setUser] = useState<UserSummary | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
   const [theme, setTheme] = useState<'light' | 'dark'>(() => {
-    const saved = localStorage.getItem('regulaflow_theme');
-    return (saved as 'light' | 'dark') || 'light';
+    try {
+      const saved = localStorage.getItem('regulaflow_theme');
+      return (saved as 'light' | 'dark') || 'dark';
+    } catch {
+      return 'dark';
+    }
   });
 
   useEffect(() => {
-    if (theme === 'dark') {
-      document.documentElement.classList.add('dark');
-    } else {
-      document.documentElement.classList.remove('dark');
+    try {
+      if (theme === 'dark') {
+        document.documentElement.classList.add('dark');
+      } else {
+        document.documentElement.classList.remove('dark');
+      }
+      localStorage.setItem('regulaflow_theme', theme);
+    } catch (e) {
+      // storage quota or private browsing note
     }
-    localStorage.setItem('regulaflow_theme', theme);
   }, [theme]);
 
   const toggleTheme = () => {
@@ -37,27 +45,44 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   useEffect(() => {
     const initAuth = async () => {
-      const token = localStorage.getItem('regulaflow_token');
-      const savedUser = localStorage.getItem('regulaflow_user');
+      try {
+        const token = localStorage.getItem('regulaflow_token');
+        const savedUser = localStorage.getItem('regulaflow_user');
 
-      if (token && savedUser) {
-        try {
-          setUser(JSON.parse(savedUser));
-          const res = await authService.me();
-          if (res.data?.user) {
-            setUser(res.data.user);
-            localStorage.setItem('regulaflow_user', JSON.stringify(res.data.user));
+        if (token && savedUser) {
+          try {
+            const parsed = JSON.parse(savedUser);
+            if (parsed && typeof parsed === 'object') {
+              setUser(parsed);
+            }
+
+            // Verify session with a 2.5-second timeout to avoid any network hanging
+            const verifyPromise = authService.me();
+            const timeoutPromise = new Promise((_, reject) =>
+              setTimeout(() => reject(new Error('Auth check timeout')), 2500)
+            );
+
+            const res = (await Promise.race([verifyPromise, timeoutPromise])) as any;
+            if (res?.data?.user) {
+              setUser(res.data.user);
+              localStorage.setItem('regulaflow_user', JSON.stringify(res.data.user));
+            }
+          } catch (e: any) {
+            if (e?.response?.status === 401) {
+              localStorage.removeItem('regulaflow_token');
+              localStorage.removeItem('regulaflow_user');
+              setUser(null);
+            }
           }
-        } catch (e) {
-          console.error('Session expired or invalid', e);
-          localStorage.removeItem('regulaflow_token');
-          localStorage.removeItem('regulaflow_user');
+        } else {
           setUser(null);
         }
-      } else {
+      } catch (globalErr) {
+        console.error('[AuthContext] Session init error:', globalErr);
         setUser(null);
+      } finally {
+        setLoading(false);
       }
-      setLoading(false);
     };
 
     initAuth();
@@ -100,7 +125,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     try {
       await authService.logout();
     } catch (e) {
-      // ignore
+      // non-blocking
     } finally {
       localStorage.removeItem('regulaflow_token');
       localStorage.removeItem('regulaflow_user');
@@ -133,4 +158,3 @@ export const useAuth = () => {
   }
   return context;
 };
-

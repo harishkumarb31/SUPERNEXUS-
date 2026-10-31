@@ -86,3 +86,4 @@ docker-compose up --build -d
    ```powershell
    Invoke-WebRequest -Uri "https://supernexus-lovat.vercel.app/api/v1/auth/login" -Method POST -Body '{"email":"superadmin@supernexus.ai","password":"Password@123"}' -ContentType "application/json"
    ```
+

@@ -135,3 +135,4 @@ On application load or browser reload:
 2. Server clears the `token` cookie and records an audit log.
 3. Client removes `regulaflow_token` and `regulaflow_user` from `localStorage`.
 4. State is reset to `user = null` and browser navigates to `/login`.
+
