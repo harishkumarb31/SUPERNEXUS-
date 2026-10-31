@@ -1,4 +1,4 @@
-# RegulaFlow AI
+# SUPERNEXUS AI
 ### Integrated AICTE Approval Workflow Automation, Compliance Monitoring and Alert Management System
 **Smart India Hackathon 2026** | **Problem Statement ID:** SIH26262  
 **Theme:** Smart Automation | **Category:** Software  
@@ -16,9 +16,9 @@ When managed via fragmented channels or disconnected systems, regulatory stakeho
 - **Compliance Lapses:** Expirations of land leases, fire safety certificates, or endowment fund FDRs slipping past unmonitored.
 - **Lack of Traceability:** Absence of an immutable, verifiable audit trail of who made, modified, or approved regulatory findings.
 
-### The RegulaFlow AI Solution
+### The SUPERNEXUS AI Solution
 
-RegulaFlow AI unites all statutory regulatory operations into an enterprise-grade platform:
+SUPERNEXUS AI unites all statutory regulatory operations into an enterprise-grade platform:
 1. **Application Lifecycle State Machine:** Strict stage-wise routing (`DRAFT` &rarr; `SUBMITTED` &rarr; `UNDER_SCRUTINY` &rarr; `DEFICIENCY_RAISED` &rarr; `RETURNED_FOR_CORRECTION` &rarr; `RESUBMITTED` &rarr; `AWAITING_EVC` &rarr; `UNDER_REVIEW` &rarr; `APPROVED`/`REJECTED`).
 2. **Document Intelligence & OCR Pipeline:** Tesseract OCR and native PDF text extraction with automatic regex entity bindings (Lessor, Lessee, Tenure, Expiry Date, Carpet Area, Notarization).
 3. **Deterministic Rule Validation Engine:** Evaluates mandatory document completeness, fire safety NOC validity, and lease tenure rules without hallucination.
