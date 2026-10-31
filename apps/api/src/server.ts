@@ -65,7 +65,7 @@ app.use('/api/v1/document-requests', documentRequestRouter);
 // Centralized Error Handler
 app.use(errorHandler);
 
-if (process.env.NODE_ENV !== 'test') {
+if (process.env.NODE_ENV !== 'test' && !process.env.VERCEL) {
   app.listen(config.port, () => {
     console.log(`=======================================================`);
     console.log(`🚀 RegulaFlow AI Engine running on port ${config.port}`);

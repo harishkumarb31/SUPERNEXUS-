@@ -1,8 +1,10 @@
 import axios from 'axios';
 import { UserRole } from '../types';
 
+const API_BASE_URL = ((import.meta as any).env?.VITE_API_URL as string) || '/api/v1';
+
 export const api = axios.create({
-  baseURL: '/api/v1',
+  baseURL: API_BASE_URL,
   headers: {
     'Content-Type': 'application/json',
   },
@@ -101,8 +103,8 @@ export const documentService = {
     const res = await api.post(`/documents/${id}/verify`, payload);
     return res.data.data;
   },
-  downloadUrl: (id: string) => `/api/v1/documents/${id}/download`,
-  previewUrl: (id: string) => `/api/v1/documents/${id}/preview`,
+  downloadUrl: (id: string) => `${API_BASE_URL}/documents/${id}/download`,
+  previewUrl: (id: string) => `${API_BASE_URL}/documents/${id}/preview`,
   deleteDocument: async (id: string) => {
     const res = await api.delete(`/documents/${id}`);
     return res.data;

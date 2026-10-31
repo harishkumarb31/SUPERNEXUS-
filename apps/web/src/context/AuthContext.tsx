@@ -55,15 +55,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           setUser(null);
         }
       } else {
-        // Automatically default to demo REGIONAL_OFFICER for seamless initial preview if not logged in
-        try {
-          const res = await authService.demoLogin(UserRole.REGIONAL_OFFICER);
-          localStorage.setItem('regulaflow_token', res.data.token);
-          localStorage.setItem('regulaflow_user', JSON.stringify(res.data.user));
-          setUser(res.data.user);
-        } catch (e) {
-          console.warn('Initial demo login fallback note:', e);
-        }
+        setUser(null);
       }
       setLoading(false);
     };
@@ -74,10 +66,14 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const login = async (email: string, pass: string) => {
     setLoading(true);
     try {
-      const res = await authService.login(email, pass);
-      localStorage.setItem('regulaflow_token', res.data.token);
-      localStorage.setItem('regulaflow_user', JSON.stringify(res.data.user));
-      setUser(res.data.user);
+      const res = await authService.login(email.trim(), pass);
+      if (res.data?.token && res.data?.user) {
+        localStorage.setItem('regulaflow_token', res.data.token);
+        localStorage.setItem('regulaflow_user', JSON.stringify(res.data.user));
+        setUser(res.data.user);
+      } else {
+        throw new Error('Invalid response payload from server');
+      }
     } finally {
       setLoading(false);
     }
@@ -87,23 +83,30 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     setLoading(true);
     try {
       const res = await authService.demoLogin(role);
-      localStorage.setItem('regulaflow_token', res.data.token);
-      localStorage.setItem('regulaflow_user', JSON.stringify(res.data.user));
-      setUser(res.data.user);
+      if (res.data?.token && res.data?.user) {
+        localStorage.setItem('regulaflow_token', res.data.token);
+        localStorage.setItem('regulaflow_user', JSON.stringify(res.data.user));
+        setUser(res.data.user);
+      } else {
+        throw new Error('Invalid response payload from server');
+      }
     } finally {
       setLoading(false);
     }
   };
 
   const logout = async () => {
+    setLoading(true);
     try {
       await authService.logout();
     } catch (e) {
       // ignore
+    } finally {
+      localStorage.removeItem('regulaflow_token');
+      localStorage.removeItem('regulaflow_user');
+      setUser(null);
+      setLoading(false);
     }
-    localStorage.removeItem('regulaflow_token');
-    localStorage.removeItem('regulaflow_user');
-    setUser(null);
   };
 
   return (

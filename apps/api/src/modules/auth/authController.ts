@@ -11,8 +11,12 @@ import { ROLE_PERMISSIONS, UserRole } from '@regulaflow/shared';
 const bcrypt = (bcryptjs as any).default || bcryptjs;
 
 const loginSchema = z.object({
-  email: z.string().email('Please enter a valid email address'),
-  password: z.string().min(6, 'Password must be at least 6 characters'),
+  email: z
+    .string()
+    .min(1, 'Email is required')
+    .email('Please enter a valid email address')
+    .transform((val) => val.toLowerCase().trim()),
+  password: z.string().min(1, 'Password is required'),
 });
 
 const demoLoginSchema = z.object({
